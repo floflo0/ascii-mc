@@ -1,0 +1,8 @@
+main
+src/*.o
+src/*.d
+tests/*.o
+tests/*.d
+tests/test
+compile_commands.json
+.cache

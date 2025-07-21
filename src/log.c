@@ -31,11 +31,11 @@ void log_quit(void) {
 void _log_errorf(location_param const char *const restrict format, ...) {
     assert(program_name && "logger module hasn't been initialized");
     assert(format != NULL);
-    fprintf(stderr, "%s ", program_name);
+    fprintf(stderr, "%s: ", program_name);
 #ifndef PROD
     assert(file != NULL);
     assert(function_name != NULL);
-    fprintf(stderr, "%s:%lu: %s:", file, line, function_name);
+    fprintf(stderr, "%s:%lu: %s: ", file, line, function_name);
 #endif
     fprintf(stderr, "error: ");
     va_list args;
@@ -48,11 +48,11 @@ void _log_errorf(location_param const char *const restrict format, ...) {
 void _log_errorf_errno(location_param const char *const restrict format, ...) {
     assert(program_name && "logger module hasn't been initialized");
     assert(format != NULL);
-    fprintf(stderr, "%s:", program_name);
+    fprintf(stderr, "%s: ", program_name);
 #ifndef PROD
     assert(file != NULL);
     assert(function_name != NULL);
-    fprintf(stderr, "%s:%lu: %s:", file, line, function_name);
+    fprintf(stderr, "%s:%lu: %s: ", file, line, function_name);
 #endif
     fprintf(stderr, "error: ");
     va_list args;

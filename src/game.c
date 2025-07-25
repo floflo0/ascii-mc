@@ -268,14 +268,14 @@ static inline void game_handle_char_event(const CharEvent *const char_event) {
         case CHAR_EVENT_KEY_Z:
             player_rotate(&game.players[0], (v2f){
                                                 0.0f,
-                                                -CAMERA_KEYBOARD_SENSITIVITY,
+                                                CAMERA_KEYBOARD_SENSITIVITY,
                                             });
             break;
 
         case CHAR_EVENT_KEY_S:
             player_rotate(&game.players[0], (v2f){
                                                 0.0f,
-                                                CAMERA_KEYBOARD_SENSITIVITY,
+                                                -CAMERA_KEYBOARD_SENSITIVITY,
                                             });
             break;
 

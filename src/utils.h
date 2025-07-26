@@ -1,11 +1,17 @@
 #pragma once
 
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #define RETURNS_NONNULL __attribute__((returns_nonnull))
+
+#define RAD(angle) (2.0f * M_PI * angle / 360.0f)
+#define DEG(angle) (360.0f * angle / (2.0f * M_PI))
+
+#define POSITIVE_MOD(a, b) (((a) % (b) + (b)) % (b))
 
 #ifndef PROD
 #define file_and_line_param const char *restrict file, const size_t line,
@@ -49,6 +55,12 @@ void copy_string(char *const restrict string_destination,
                  const char *const restrict string_source,
                  const size_t max_size) NONNULL(1, 2);
 
+bool parse_int(const char *const restrict string, int *const restrict value)
+    NONNULL();
+
+bool parse_uint32(const char *const restrict string,
+                  uint32_t *const restrict value) NONNULL();
+
 static inline int min_int(const int a, const int b) {
     return a < b ? a : b;
 }
@@ -73,8 +85,3 @@ static inline float clamp_float(const float value, const float minimum,
                                 const float maximum) {
     return fminf(maximum, fmaxf(minimum, value));
 }
-
-#define RAD(angle) (2.0f * M_PI * angle / 360.0f)
-#define DEG(angle) (360.0f * angle / (2.0f * M_PI))
-
-#define POSITIVE_MOD(a, b) (((a) % (b) + (b)) % (b))

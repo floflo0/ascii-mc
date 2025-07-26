@@ -1,10 +1,11 @@
 BUILD_TYPE ?= debug
 
 EXEC := main
+VERSION := 0.0.0
 
 CC := gcc
 LIBS := libevdev libsystemd
-CFLAGS := -Wall -Wextra -Wcast-qual -Wmissing-prototypes $(shell pkg-config --cflags $(LIBS))
+CFLAGS := -Wall -Wextra -Wcast-qual -Wmissing-prototypes -DVERSION=\"$(VERSION)\" $(shell pkg-config --cflags $(LIBS))
 ifeq ($(BUILD_TYPE), release)
 	CFLAGS += -DPROD -DNDEBUG -Ofast -flto=auto -march=native
 else ifeq ($(BUILD_TYPE), debug)

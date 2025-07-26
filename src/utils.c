@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -68,4 +69,31 @@ void copy_string(char *const restrict string_destination,
         string_destination[i] = string_source[i];
     }
     string_destination[i] = '\0';
+}
+
+bool parse_int(const char *const restrict string, int *const restrict value) {
+    assert(string != NULL);
+    assert(value != NULL);
+    char *end_pointer;
+    const long value_long = strtol(string, &end_pointer, 10);
+    assert(end_pointer != NULL);
+    if (*end_pointer != '\0' || value_long > INT_MAX || value_long < INT_MIN) {
+        return false;
+    }
+    *value = value_long;
+    return true;
+}
+
+bool parse_uint32(const char *const restrict string,
+                  uint32_t *const restrict value) {
+    assert(string != NULL);
+    assert(value != NULL);
+    char *end_pointer;
+    const long value_long = strtol(string, &end_pointer, 10);
+    assert(end_pointer != NULL);
+    if (*end_pointer != '\0' || value_long > UINT32_MAX || value_long < 0) {
+        return false;
+    }
+    *value = value_long;
+    return true;
 }

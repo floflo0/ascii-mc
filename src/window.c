@@ -304,6 +304,18 @@ static char line_get_char(const int dx, const int dy) {
     return '\\';
 }
 
+static inline void window_set_pixel_with_z_check(const int pixel_index,
+                                                 const char chr,
+                                                 const Color color,
+                                                 const float z) {
+    assert(window.is_init);
+    assert(0 <= pixel_index && pixel_index < window.width * window.height);
+    mutex_lock(&window.pixels[pixel_index].mutex);
+    if (z < window.pixels[pixel_index].z)
+        window_set_pixel(pixel_index, chr, color, z);
+    mutex_unlock(&window.pixels[pixel_index].mutex);
+}
+
 static void window_render_line(v3f v1, v3f v2, const Color color) {
     assert(window.is_init);
 
@@ -321,15 +333,8 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
 
     if (dx == 0 && dy == 0) {
         if (0 <= x1 && x1 < window.width && 0 <= y1 && y1 < window.height) {
-            const int index = y1 * window.width + x1;
-            const float z = fminf(z1, z2);
-            mutex_lock(&window.pixels[index].mutex);
-            if (z < window.pixels[index].z) {
-                window.pixels[index].chr = line_char;
-                window.pixels[index].color = color;
-                window.pixels[index].z = z;
-            }
-            mutex_unlock(&window.pixels[index].mutex);
+            window_set_pixel_with_z_check(y1 * window.width + x1, line_char,
+                                          color, fminf(z1, z2));
         }
         return;
     }
@@ -355,16 +360,9 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
             const int y = dy * (x - x1) / dx + y1;
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
                 const float t = (float)(x - x1) / dx;
-                const float z =
-                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION;
-                const int index = y * window.width + x;
-                mutex_lock(&window.pixels[index].mutex);
-                if (z < window.pixels[index].z) {
-                    window.pixels[index].chr = line_char;
-                    window.pixels[index].color = color;
-                    window.pixels[index].z = z;
-                }
-                mutex_unlock(&window.pixels[index].mutex);
+                window_set_pixel_with_z_check(
+                    y * window.width + x, line_char, color,
+                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION);
             }
         }
     } else {
@@ -388,16 +386,9 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
             const int x = dx * (y - y1) / dy + x1;
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
                 const float t = (float)(y - y1) / dy;
-                const float z =
-                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION;
-                const int index = y * window.width + x;
-                mutex_lock(&window.pixels[index].mutex);
-                if (z < window.pixels[index].z) {
-                    window.pixels[index].chr = line_char;
-                    window.pixels[index].color = color;
-                    window.pixels[index].z = z;
-                }
-                mutex_unlock(&window.pixels[index].mutex);
+                window_set_pixel_with_z_check(
+                    y * window.width + x, line_char, color,
+                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION);
             }
         }
     }
@@ -438,6 +429,9 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
     const float z2 = triangle->v2.z;
     const float z3 = triangle->v3.z;
 
+    const char shade = triangle->shade;
+    const Color color = triangle->color;
+
     v2i position;
     for (position.y = ymin; position.y <= ymax; ++position.y) {
         const int row_offset = position.y * window.width;
@@ -446,16 +440,9 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
             const int w2 = v2i_get_determinant(v3, v1, position);
             const int w3 = v2i_get_determinant(v1, v2, position);
             if (w1 >= 0 && w2 >= 0 && w3 >= 0) {
-                const float z =
-                    (float)((z1 * w1) + (z2 * w2) + (z3 * w3)) / area;
-                const int index = row_offset + position.x;
-                mutex_lock(&window.pixels[index].mutex);
-                if (z < window.pixels[index].z) {
-                    window.pixels[index].chr = triangle->shade;
-                    window.pixels[index].color = triangle->color;
-                    window.pixels[index].z = z;
-                }
-                mutex_unlock(&window.pixels[index].mutex);
+                window_set_pixel_with_z_check(
+                    row_offset + position.x, shade, color,
+                    (float)((z1 * w1) + (z2 * w2) + (z3 * w3)) / area);
             }
         }
     }

@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,21 +76,6 @@ void command_erase_char(void) {
 
     --command_buffer_length;
     command_buffer[command_buffer_length] = '\0';
-}
-
-static bool parse_int(const char *const string, int *const value) NONNULL();
-
-static bool parse_int(const char *const string, int *const value) {
-    assert(string != NULL);
-    assert(value != NULL);
-    char *end_pointer;
-    const long value_long = strtol(string, &end_pointer, 10);
-    assert(end_pointer != NULL);
-    if (*end_pointer != '\0' || value_long > INT_MAX || value_long < INT_MIN) {
-        return false;
-    }
-    *value = value_long;
-    return true;
 }
 
 static bool parse_game_mode_command(Command *const command) NONNULL();

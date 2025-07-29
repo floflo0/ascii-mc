@@ -333,8 +333,10 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
 
     if (dx == 0 && dy == 0) {
         if (0 <= x1 && x1 < window.width && 0 <= y1 && y1 < window.height) {
-            window_set_pixel_with_z_check(y1 * window.width + x1, line_char,
-                                          color, fminf(z1, z2));
+            const float z = fminf(z1, z2);
+            window_set_pixel_with_z_check(
+                y1 * window.width + x1, line_char, color,
+                z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
         }
         return;
     }
@@ -360,9 +362,10 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
             const int y = dy * (x - x1) / dx + y1;
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
                 const float t = (float)(x - x1) / dx;
+                const float z = (1.0f - t) * z1 + t * z2;
                 window_set_pixel_with_z_check(
                     y * window.width + x, line_char, color,
-                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION);
+                    z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
             }
         }
     } else {
@@ -386,9 +389,10 @@ static void window_render_line(v3f v1, v3f v2, const Color color) {
             const int x = dx * (y - y1) / dy + x1;
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
                 const float t = (float)(y - y1) / dy;
+                const float z = (1.0f - t) * z1 + t * z2;
                 window_set_pixel_with_z_check(
                     y * window.width + x, line_char, color,
-                    (1.0f - t) * z1 + t * z2 - MESH_OUTLINE_Z_CORRECTION);
+                    z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
             }
         }
     }

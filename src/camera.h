@@ -22,9 +22,6 @@ void camera_get_view_matrix(const Camera *const restrict self, m4f view_matrix)
 void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix)
     NONNULL();
 
-void camera_get_projection_matrix(const Camera *const self,
-                                  m4f projection_matrix) NONNULL();
-
 v3f camera_get_look_direction(const Camera *const self) NONNULL();
 
 void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio)

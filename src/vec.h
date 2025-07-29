@@ -110,10 +110,14 @@ static inline v3f v3f_mul(const v3f vec, const float value) {
     };
 }
 
+static inline v3f v3f_div(const v3f vec, const float value) {
+    return v3f_mul(vec, 1.0f / value);
+}
+
 static inline v3f v3f_normalize(const v3f vec) {
     const float norm_squared = v3f_norm_squared(vec);
     if (norm_squared == 0.0f) return (v3f){0.0f, 0.0f, 0.0f};
-    return v3f_mul(vec, 1.0f / sqrtf(norm_squared));
+    return v3f_div(vec, sqrtf(norm_squared));
 }
 
 static inline v3f v3f_add(const v3f v1, const v3f v2) {

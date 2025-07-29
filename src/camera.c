@@ -13,7 +13,7 @@ static void camera_update_projection_matrix(Camera *const self) {
     assert(self != NULL);
 
     const float d = 1 / tanf(CAMERA_FOV / 2.0f);
-    const float inv_range = 1.0f / (CAMERA_Z_NEAR - CAMERA_Z_FAR);
+    const float l = CAMERA_Z_FAR / (CAMERA_Z_FAR - CAMERA_Z_NEAR);
 
     self->projection_matrix[0] = d / self->aspect_ratio;
     self->projection_matrix[1] = 0.0f;
@@ -27,9 +27,8 @@ static void camera_update_projection_matrix(Camera *const self) {
 
     self->projection_matrix[8] = 0.0f;
     self->projection_matrix[9] = 0.0f;
-    self->projection_matrix[10] = (-CAMERA_Z_FAR - CAMERA_Z_NEAR) * inv_range;
-    self->projection_matrix[11] =
-        2.0f * CAMERA_Z_FAR * CAMERA_Z_NEAR * inv_range;
+    self->projection_matrix[10] = l;
+    self->projection_matrix[11] = -l * CAMERA_Z_NEAR;
 
     self->projection_matrix[12] = 0.0f;
     self->projection_matrix[13] = 0.0f;
@@ -56,6 +55,7 @@ void camera_destroy(Camera *const self) {
     assert(self != NULL);
     free(self);
 }
+
 void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix) {
     assert(self != NULL);
     assert(rotation_matrix != NULL);

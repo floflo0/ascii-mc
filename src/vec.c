@@ -9,11 +9,12 @@ void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output) {
     assert(mat2 != NULL);
     assert(output != NULL);
     for (uint8_t i = 0; i < 4; ++i) {
+        const uint8_t row = i * 4;
         for (uint8_t j = 0; j < 4; ++j) {
-            output[i * 4 + j] = 0.0f;
-            const uint8_t index = i * 4 + j;
+            const uint8_t index = row + j;
+            output[index] = 0.0f;
             for (uint8_t k = 0; k < 4; ++k) {
-                output[index] += mat1[i * 4 + k] * mat2[j + k * 4];
+                output[index] += mat1[row + k] * mat2[j + k * 4];
             }
         }
     }
@@ -22,7 +23,7 @@ void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output) {
 v3f mul_m4f_v3f(const m4f mat, const v3f vec) {
     assert(mat != NULL);
 
-    v3f output = {
+    const v3f output = {
         .x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3],
         .y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7],
         .z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11],
@@ -31,11 +32,7 @@ v3f mul_m4f_v3f(const m4f mat, const v3f vec) {
     const float w =
         mat[12] * vec.x + mat[13] * vec.y + mat[14] * vec.z + mat[15];
 
-    if (w) {
-        output.x /= w;
-        output.y /= w;
-        // output.z /= w;
-    }
+    if (w != 0.0f) return v3f_div(output, w);
 
     return output;
 }

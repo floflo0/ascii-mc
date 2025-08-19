@@ -1,6 +1,7 @@
+#include "args.h"
+
 #include <string.h>
 
-#include "args.h"
 #include "log.h"
 
 #define CHAR(c) #c[0]

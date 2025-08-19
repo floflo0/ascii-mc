@@ -1,3 +1,5 @@
+#include "world.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -6,9 +8,9 @@
 // #define LOG_LEVEL_ERROR
 #include "log.h"
 #include "perlin_noise.h"
+#include "textures.h"
 #include "threads.h"
 #include "utils.h"
-#include "world.h"
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
 
@@ -48,13 +50,44 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
     assert(world != NULL);
 
     static const Color block_top_colors[] = {
-#define BLOCK(name, name_string, top_color, color) top_color,
+#define BLOCK(name, name_string, top_color, ...) top_color,
         BLOCKS
 #undef BLOCK
     };
 
-    static const Color block_colors[] = {
-#define BLOCK(name, name_string, top_color, color) color,
+    static const Color block_side_colors[] = {
+#define BLOCK(name, name_string, top_color, side_color, ...) side_color,
+        BLOCKS
+#undef BLOCK
+    };
+
+    static const Color block_bottom_colors[] = {
+#define BLOCK(name, name_string, top_color, side_color, bottom_color, ...) \
+    bottom_color,
+        BLOCKS
+#undef BLOCK
+    };
+
+    static const Texture *const block_top_textures[] = {
+#define BLOCK(name, name_string, top_color, _side_color, _bottom_color, \
+              top_texture, ...)                                         \
+    top_texture,
+        BLOCKS
+#undef BLOCK
+    };
+
+    static const Texture *const block_side_textures[] = {
+#define BLOCK(name, name_string, top_color, _side_color, _bottom_color, \
+              top_texture, side_texture, ...)                           \
+    side_texture,
+        BLOCKS
+#undef BLOCK
+    };
+
+    static const Texture *const block_bottom_textures[] = {
+#define BLOCK(name, name_string, top_color, _side_color, _bottom_color, \
+              top_texture, side_texture, bottom_texture)                \
+    bottom_texture,
         BLOCKS
 #undef BLOCK
     };
@@ -97,7 +130,10 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
             for (int z = 0; z < CHUNK_SIZE; ++z) {
                 if (self->blocks[x][y][z].type == BLOCK_TYPE_AIR) continue;
 
-                const Color color = block_colors[self->blocks[x][y][z].type];
+                const Color side_color =
+                    block_side_colors[self->blocks[x][y][z].type];
+                const Texture *const side_texture =
+                    block_side_textures[self->blocks[x][y][z].type];
 
                 const bool is_front_face_visible =
                     (z == 0 && front_chunk != NULL &&
@@ -214,262 +250,294 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                                 self->blocks[x + 1][y - 1][z].type));
 
                 size_t i;
+                TriangleIndex *triangle;
                 if (is_front_face_visible) {
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_left_face_visible || block_front_left) {
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
                     }
 
                     if ((y == CHUNK_HEIGHT - 1 ||
                          !self->blocks[x][y + 1][z].type) ||
                         block_top_front)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_right_face_visible || block_front_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == 0 || !self->blocks[x][y - 1][z].type) ||
                         block_bottom_front)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
 
                 if (is_right_face_visible) {
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_front_face_visible || block_front_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == CHUNK_HEIGHT - 1 ||
                          !self->blocks[x][y + 1][z].type) ||
                         block_top_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_back_face_visible || block_back_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == 0 || !self->blocks[x][y - 1][z].type) ||
                         block_bottom_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
 
                 if (is_back_face_visible) {
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_right_face_visible || block_back_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == CHUNK_HEIGHT - 1 ||
                          !self->blocks[x][y + 1][z].type) ||
                         block_top_back)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_left_face_visible || block_back_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == 0 || !self->blocks[x][y - 1][z].type) ||
                         block_bottom_back)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
 
                 if (is_left_face_visible) {
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_back_face_visible || block_back_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == CHUNK_HEIGHT - 1 ||
                          !self->blocks[x][y + 1][z].type) ||
                         block_top_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = side_texture;
+                    triangle->color = side_color;
 
                     if (is_front_face_visible || block_front_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if ((y == 0 || !self->blocks[x][y - 1][z].type) ||
                         block_bottom_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
 
                 // top face
                 if (y == CHUNK_HEIGHT - 1 || !self->blocks[x][y + 1][z].type) {
+                    const Texture *const top_texture =
+                        block_top_textures[self->blocks[x][y][z].type];
                     const Color top_color =
                         block_top_colors[self->blocks[x][y][z].type];
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = top_color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = top_texture;
+                    triangle->color = top_color;
 
                     if (is_left_face_visible || block_top_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if (is_back_face_visible || block_top_back)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y + 1, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y + 1, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = top_color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = top_texture;
+                    triangle->color = top_color;
 
                     if (is_right_face_visible || block_top_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if (is_front_face_visible || block_top_front)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
 
                 // bottom face
                 if (y > 0 && !self->blocks[x][y - 1][z].type) {
+                    const Texture *const bottom_texture =
+                        block_bottom_textures[self->blocks[x][y][z].type];
+                    const Color bottom_color =
+                        block_bottom_colors[self->blocks[x][y][z].type];
+
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z + 1);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){0.0f, 1.0f};
+                    triangle->uv2 = (v2f){0.0f, 0.0f};
+                    triangle->uv3 = (v2f){1.0f, 0.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = bottom_texture;
+                    triangle->color = bottom_color;
 
                     if (is_left_face_visible || block_bottom_left)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if (is_front_face_visible || block_bottom_front)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
                     i = triangle_index_array_grow(mesh->triangles);
-                    mesh->triangles->array[i].v1 = chunk_get_vertex_index(
+                    triangle = &mesh->triangles->array[i];
+                    triangle->v1 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z);
-                    mesh->triangles->array[i].v2 = chunk_get_vertex_index(
+                    triangle->v2 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x + 1, y, z + 1);
-                    mesh->triangles->array[i].v3 = chunk_get_vertex_index(
+                    triangle->v3 = chunk_get_vertex_index(
                         self, mesh, vertex_indices, x, y, z + 1);
-                    mesh->triangles->array[i].edges =
-                        TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
-                    mesh->triangles->array[i].color = color;
+                    triangle->uv1 = (v2f){1.0f, 0.0f};
+                    triangle->uv2 = (v2f){1.0f, 1.0f};
+                    triangle->uv3 = (v2f){0.0f, 1.0f};
+                    triangle->edges = TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3;
+                    triangle->texture = bottom_texture;
+                    triangle->color = bottom_color;
 
                     if (is_right_face_visible || block_bottom_right)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V1_V2_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V1_V2_FAR;
 
                     if (is_back_face_visible || block_bottom_back)
-                        mesh->triangles->array[i].edges |=
-                            TRIANGLE_EDGE_V2_V3_FAR;
+                        triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
                 }
             }
         }

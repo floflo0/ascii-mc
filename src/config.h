@@ -7,7 +7,7 @@
 #include "player_game_mode.h"
 #include "utils.h"
 
-#define CHARACTER_RATIO (7.0f / 17.0f)
+#define CHARACTER_RATIO (8.0f / 16.0f)
 
 #define CHUNK_SIZE 16     // m
 #define CHUNK_HEIGHT 256  // m
@@ -68,7 +68,7 @@
 // #define GAME_MAX_FRAMERATE 60
 
 #define MESH_OUTLINE_COLOR COLOR_DARK_GREY
-#define MESH_OUTLINE_Z_CORRECTION 0.09f
+#define MESH_OUTLINE_Z_CORRECTION 0.075f
 #define MESH_OUTLINE_MAX_DISTANCE PLAYER_RANGE
 #define MESH_FAR_OUTLINE_MAX_DISTANCE 15.0f  // m
 #define MESH_SHADOW_DISTANCE (CHUNK_SIZE * WORLD_RENDER_DISTANCE - 5.0f)
@@ -96,17 +96,19 @@
 #define STATIC_ASSERT_IS_INTEGER(value) \
     static_assert((value) == (int)(value), #value " must be an integer")
 
-#define STATIC_ASSERT_IS_BOOLEAN(value)                   \
-    static_assert(value == true || value == false, #value \
-                  " must be a "                           \
-                  "boolean")
+#define STATIC_ASSERT_IS_BOOLEAN(value)                                 \
+    static_assert(value == true || value == false, #value " must be a " \
+                                                          "boolean")
 
-#define STATIC_ASSERT_IS_COLOR(value)                                       \
-    static_assert(value == COLOR_WHITE || value == COLOR_RED ||             \
-                  value == COLOR_GREEN || value == COLOR_YELLOW ||          \
-                  value == COLOR_BLUE || value == COLOR_MAGENTA ||          \
-                  value == COLOR_CYAN || value == COLOR_LIGHT_LIGHT_GREY || \
-                  value == COLOR_DARK_GREY || value == COLOR_LIGHT_GREY)
+#define STATIC_ASSERT_IS_COLOR(value)                                        \
+    static_assert(value == COLOR_DARK_RED || value == COLOR_DARK_GREEN ||    \
+                  value == COLOR_DARK_YELLOW || value == COLOR_DARK_BLUE ||  \
+                  value == COLOR_DARK_MAGENTA || value == COLOR_DARK_CYAN || \
+                  value == COLOR_LIGHT_GREY || value == COLOR_DARK_GREY ||   \
+                  value == COLOR_RED || value == COLOR_GREEN ||              \
+                  value == COLOR_YELLOW || value == COLOR_BLUE ||            \
+                  value == COLOR_MAGENTA || value == COLOR_CYAN ||           \
+                  value == COLOR_WHITE)
 
 static_assert(0.0f < CHARACTER_RATIO);
 

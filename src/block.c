@@ -4,8 +4,7 @@
 #include <stddef.h>
 
 static const char *const block_type_to_string[] = {
-#define BLOCK(name, name_string, top_color, color) \
-    [BLOCK_TYPE_##name] = name_string,
+#define BLOCK(name, name_string, ...) [BLOCK_TYPE_##name] = name_string,
     BLOCKS
 #undef BLOCK
 };

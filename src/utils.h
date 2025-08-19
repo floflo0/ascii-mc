@@ -81,7 +81,15 @@ static inline float min3_float(const float a, const float b, const float c) {
     return fminf(a, fminf(b, c));
 }
 
+static inline float max3_float(const float a, const float b, const float c) {
+    return fmaxf(a, fmaxf(b, c));
+}
+
 static inline float clamp_float(const float value, const float minimum,
                                 const float maximum) {
     return fminf(maximum, fmaxf(minimum, value));
+}
+
+static inline float lerp(const float a, const float b, const float t) {
+    return (1.0f - t) * a + t * b;
 }

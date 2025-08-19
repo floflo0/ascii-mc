@@ -14,11 +14,13 @@
 #include "event_queue.h"
 #include "log.h"
 #include "text.h"
+#include "texture.h"
 #include "threads.h"
 #include "utils.h"
 
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
+#define TEXT_BOLD "\033[1m"
 #define MOVE_CURSOR_TOP_LEFT "\033[H"
 #define SWITCH_TO_ALTERNATE_SCREEN "\033[?1049h"
 #define SWITCH_TO_REGULAR_SCREEN "\033[?1049l"
@@ -30,7 +32,8 @@
 #define DISPLAY_BUFFER_SIZE(display_buffer, window_size)          \
     (sizeof(*display_buffer) * PIXEL_MAX_SIZE * window_size +     \
      sizeof(MOVE_CURSOR_TOP_LEFT) - 1 + sizeof(HIDE_CURSOR) - 1 + \
-     sizeof(SHOW_CURSOR) - 1 + CURSOR_POSITION_BUFFER_CAPACITY)
+     sizeof(SHOW_CURSOR) - 1 + sizeof(TEXT_BOLD) - 1 +            \
+     CURSOR_POSITION_BUFFER_CAPACITY)
 
 #define WRITE(string_literal) \
     write(STDOUT_FILENO, (string_literal), sizeof((string_literal)) - 1)
@@ -229,8 +232,8 @@ void window_clear(void) {
 void window_flush(void) {
     assert(window.is_init);
 
-    static const char *colors[COLOR_COUNT] = {
-#define COLOR(name, code) "\033[" #code "m",
+    static const char *const colors[COLOR_COUNT] = {
+#define COLOR(name, code) [COLOR_##name] = "\033[" #code "m",
         COLORS
 #undef COLOR
     };
@@ -242,6 +245,7 @@ void window_flush(void) {
     } while (0)
 
     size_t display_buffer_size = 0;
+    DISPLAY_BUFFER_APPEND(TEXT_BOLD);
     DISPLAY_BUFFER_APPEND(HIDE_CURSOR);
     DISPLAY_BUFFER_APPEND(MOVE_CURSOR_TOP_LEFT);
     DISPLAY_BUFFER_APPEND(colors[window.pixels[0].color]);
@@ -290,16 +294,15 @@ void window_render_rectangle(const v2i position, const v2i size, const char chr,
     }
 }
 
-static char line_get_char(const int dx, const int dy) {
-    if (dx == 0) return '|';
-    if (dy == 0) return '-';
+static char line_get_char(const float dx, const float dy) {
+    if (dx == 0.0f) return '|';
 
     const float dir = fabsf((float)dy / dx);
 
     // TODO maybe put this in the config because it depends on the terminal font
-    if (dir < 0.2) return '-';
-    if (dir > 2.0) return '|';
-    if (dx * dy < 0) return '/';
+    if (dir < 0.2f) return '-';
+    if (dir > 2.0f) return '|';
+    if (dx * dy < 0.0f) return '/';
 
     return '\\';
 }
@@ -319,112 +322,114 @@ static inline void window_set_pixel_with_z_check(const int pixel_index,
 static void window_render_line(v3f v1, v3f v2, const Color color) {
     assert(window.is_init);
 
-    int x1 = v1.x;
-    int y1 = v1.y;
-    float z1 = v1.z;
-    int x2 = v2.x;
-    int y2 = v2.y;
-    float z2 = v2.z;
+    const float dxf = v2.x - v1.x;
+    const float dyf = v2.y - v1.y;
 
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-
-    const char line_char = line_get_char(dx, dy);
-
-    if (dx == 0 && dy == 0) {
-        if (0 <= x1 && x1 < window.width && 0 <= y1 && y1 < window.height) {
-            const float z = fminf(z1, z2);
+    if (dxf == 0.0f && dyf == 0.0f) {
+        const int x = (int)v1.x;
+        const int y = (int)v1.y;
+        if (0 <= x && x < window.width && 0 <= y && y < window.height) {
+            const float z = fminf(v1.z, v2.z);
             window_set_pixel_with_z_check(
-                y1 * window.width + x1, line_char, color,
+                y * window.width + x, '-', color,
                 z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
         }
         return;
     }
 
-    if (abs(dx) > abs(dy)) {
-        if (dx < 0) {
-            const int tmp_x = x1;
-            x1 = x2;
-            x2 = tmp_x;
-            dx = x2 - x1;
+    const char line_char = line_get_char(dxf, dyf);
 
-            const int tmp_y = y1;
-            y1 = y2;
-            y2 = tmp_y;
-            dy = y2 - y1;
-
-            const float tmp_z = z1;
-            z1 = z2;
-            z2 = tmp_z;
+    if (fabsf(dxf) > fabsf(dyf)) {
+        if (dxf < 0.0f) {
+            const v3f tmp = v1;
+            v1 = v2;
+            v2 = tmp;
         }
 
-        for (int x = x1; x <= x2; ++x) {
-            const int y = dy * (x - x1) / dx + y1;
+        const int x_start = roundf(v1.x);
+        const int x_end = v2.x;
+        const float inv_dx = 1.0f / (x_end - x_start);
+
+        const float z1 = v1.z;
+        const float z2 = v2.z;
+
+        const float y_step = dyf / dxf;
+
+        float yf = v1.y;
+        for (int x = x_start; x <= x_end; ++x) {
+            const int y = (int)roundf(yf);
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
-                const float t = (float)(x - x1) / dx;
-                const float z = (1.0f - t) * z1 + t * z2;
+                const float t = (x - x_start) * inv_dx;
+                const float z = lerp(z1, z2, t);
                 window_set_pixel_with_z_check(
                     y * window.width + x, line_char, color,
                     z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
             }
+            yf += y_step;
         }
     } else {
-        if (dy < 0) {
-            const int tmp_x = x1;
-            x1 = x2;
-            x2 = tmp_x;
-            dx = x2 - x1;
-
-            const int tmp_y = y1;
-            y1 = y2;
-            y2 = tmp_y;
-            dy = y2 - y1;
-
-            const float tmp_z = z1;
-            z1 = z2;
-            z2 = tmp_z;
+        if (dyf < 0.0f) {
+            const v3f tmp = v1;
+            v1 = v2;
+            v2 = tmp;
         }
 
-        for (int y = y1; y <= y2; ++y) {
-            const int x = dx * (y - y1) / dy + x1;
+        const int y_start = roundf(v1.y);
+        const int y_end = v2.y;
+        const float inv_dy = 1.0f / (y_end - y_start);
+
+        const float z1 = v1.z;
+        const float z2 = v2.z;
+
+        const float x_step = dxf / dyf;
+
+        float xf = v1.x;
+        for (int y = y_start; y <= y_end; ++y) {
+            const int x = (int)roundf(xf);
             if (0 <= x && x < window.width && 0 <= y && y < window.height) {
-                const float t = (float)(y - y1) / dy;
-                const float z = (1.0f - t) * z1 + t * z2;
+                const float t = (y - y_start) * inv_dy;
+                const float z = lerp(z1, z2, t);
                 window_set_pixel_with_z_check(
                     y * window.width + x, line_char, color,
                     z - MESH_OUTLINE_Z_CORRECTION * (1.0f - z));
             }
+            xf += x_step;
         }
     }
 }
 
 #ifndef RENDER_WIREFRAME
+static bool edge_is_top_left(const v2f v1, const v2f v2) {
+    const v2f edge = v2f_sub(v2, v1);
+    return edge.y < 0.0f || (edge.y == 0.0f && edge.x > 0.0f);
+}
+
 static void window_render_triangle_fill(const Triangle3D *const triangle)
     NONNULL();
 
 static void window_render_triangle_fill(const Triangle3D *const triangle) {
     assert(window.is_init);
-
     assert(triangle != NULL);
 
-    const int x1 = triangle->v1.x;
-    const int x2 = triangle->v2.x;
-    const int x3 = triangle->v3.x;
-    const int y1 = triangle->v1.y;
-    const int y2 = triangle->v2.y;
-    const int y3 = triangle->v3.y;
+    const float x1 = triangle->v1.x;
+    const float x2 = triangle->v2.x;
+    const float x3 = triangle->v3.x;
+    const float y1 = triangle->v1.y;
+    const float y2 = triangle->v2.y;
+    const float y3 = triangle->v3.y;
 
-    const v2i v1 = {x1, y1};
-    const v2i v2 = {x2, y2};
-    const v2i v3 = {x3, y3};
+    const v2f v1 = {x1, y1};
+    const v2f v2 = {x2, y2};
+    const v2f v3 = {x3, y3};
 
-    const int area = v2i_get_determinant(v1, v2, v3);
-    if (area == 0) return;
+    const float area = v2f_get_determinant(v1, v2, v3);
+    if (area == 0.0f) return;
+    const float inv_area = 1.0f / area;
 
     const int xmin = min3_float(x1, x2, x3);
     const int ymin = min3_float(y1, y2, y3);
-    const int xmax = min_int(window.width - 1, max3_int(x1, x2, x3));
-    const int ymax = min_int(window.height - 1, max3_int(y1, y2, y3));
+    const int xmax = min_int(window.width - 1, (int)max3_float(x1, x2, x3));
+    const int ymax = min_int(window.height - 1, (int)max3_float(y1, y2, y3));
 
     assert(xmin >= 0);
     assert(ymin >= 0);
@@ -433,32 +438,83 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
     const float z2 = triangle->v2.z;
     const float z3 = triangle->v3.z;
 
+    const float triangle_w1 = triangle->v1.w;
+    const float triangle_w2 = triangle->v2.w;
+    const float triangle_w3 = triangle->v3.w;
+
     const char shade = triangle->shade;
     const Color color = triangle->color;
+    const Texture *const texture = triangle->texture;
 
-    v2i position;
-    for (position.y = ymin; position.y <= ymax; ++position.y) {
-        const int row_offset = position.y * window.width;
-        for (position.x = xmin; position.x <= xmax; ++position.x) {
-            const int w1 = v2i_get_determinant(v2, v3, position);
-            const int w2 = v2i_get_determinant(v3, v1, position);
-            const int w3 = v2i_get_determinant(v1, v2, position);
+    const float delta_w1_x = x3 - x2;
+    const float delta_w2_x = x1 - x3;
+    const float delta_w3_x = x2 - x1;
+    const float delta_w1_y = y2 - y3;
+    const float delta_w2_y = y3 - y1;
+    const float delta_w3_y = y1 - y2;
+
+    const float bias1 = edge_is_top_left(v2, v3) * -0.000001f;
+    const float bias2 = edge_is_top_left(v3, v1) * -0.000001f;
+    const float bias3 = edge_is_top_left(v1, v2) * -0.000001f;
+
+    const v2f p0 = {xmin, ymin};
+    float w1_row = v2f_get_determinant(v2, v3, p0) + bias1;
+    float w2_row = v2f_get_determinant(v3, v1, p0) + bias2;
+    float w3_row = v2f_get_determinant(v1, v2, p0) + bias3;
+
+    for (int y = ymin; y <= ymax; ++y) {
+        float w1 = w1_row;
+        float w2 = w2_row;
+        float w3 = w3_row;
+        const int row_offset = y * window.width;
+        for (int x = xmin; x <= xmax; ++x) {
             if (w1 >= 0 && w2 >= 0 && w3 >= 0) {
+                const float alpha = w1 * inv_area;
+                const float beta = w2 * inv_area;
+                const float gamma = w3 * inv_area;
+
+                Color pixel_color;
+                if (texture != NULL) {
+                    const float u =
+                        (triangle->uv1.x * alpha * z1 / triangle_w1) +
+                        (triangle->uv2.x * beta * z2 / triangle_w2) +
+                        (triangle->uv3.x * gamma * z3 / triangle_w3);
+                    const float v =
+                        (triangle->uv1.y * alpha * z1 / triangle_w1) +
+                        (triangle->uv2.y * beta * z2 / triangle_w2) +
+                        (triangle->uv3.y * gamma * z3 / triangle_w3);
+                    const float inv_w = (alpha / triangle_w1) +
+                                        (beta / triangle_w2) +
+                                        (gamma / triangle_w3);
+                    pixel_color = texture_get(texture, u / inv_w, v / inv_w);
+                } else {
+                    pixel_color = color;
+                }
                 window_set_pixel_with_z_check(
-                    row_offset + position.x, shade, color,
-                    (float)((z1 * w1) + (z2 * w2) + (z3 * w3)) / area);
+                    row_offset + x, shade, pixel_color,
+                    ((z1 * alpha) + (z2 * beta) + (z3 * gamma)) /
+                        (alpha + beta + gamma));
             }
+            w1 += delta_w1_y;
+            w2 += delta_w2_y;
+            w3 += delta_w3_y;
         }
+        w1_row += delta_w1_x;
+        w2_row += delta_w2_x;
+        w3_row += delta_w3_x;
     }
 
     if (triangle->edges & (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V1_V2_FAR))
-        window_render_line(triangle->v1, triangle->v2, MESH_OUTLINE_COLOR);
+        window_render_line(triangle->v1.xyz, triangle->v2.xyz,
+                           MESH_OUTLINE_COLOR);
 
     if (triangle->edges & (TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V2_V3_FAR))
-        window_render_line(triangle->v2, triangle->v3, MESH_OUTLINE_COLOR);
+        window_render_line(triangle->v2.xyz, triangle->v3.xyz,
+                           MESH_OUTLINE_COLOR);
 
     if (triangle->edges & (TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V3_V1_FAR))
-        window_render_line(triangle->v3, triangle->v1, MESH_OUTLINE_COLOR);
+        window_render_line(triangle->v3.xyz, triangle->v1.xyz,
+                           MESH_OUTLINE_COLOR);
 }
 #endif
 

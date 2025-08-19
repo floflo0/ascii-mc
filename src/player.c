@@ -76,6 +76,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 0;
     self->mesh->triangles->array[i].v2 = 1;
     self->mesh->triangles->array[i].v3 = 2;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -85,6 +86,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 0;
     self->mesh->triangles->array[i].v2 = 2;
     self->mesh->triangles->array[i].v3 = 3;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -95,6 +97,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 3;
     self->mesh->triangles->array[i].v2 = 2;
     self->mesh->triangles->array[i].v3 = 6;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -104,6 +107,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 3;
     self->mesh->triangles->array[i].v2 = 6;
     self->mesh->triangles->array[i].v3 = 7;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -114,6 +118,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 7;
     self->mesh->triangles->array[i].v2 = 6;
     self->mesh->triangles->array[i].v3 = 5;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -123,6 +128,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 7;
     self->mesh->triangles->array[i].v2 = 5;
     self->mesh->triangles->array[i].v3 = 4;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -133,6 +139,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 4;
     self->mesh->triangles->array[i].v2 = 5;
     self->mesh->triangles->array[i].v3 = 1;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -142,6 +149,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 4;
     self->mesh->triangles->array[i].v2 = 1;
     self->mesh->triangles->array[i].v3 = 0;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -152,6 +160,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 1;
     self->mesh->triangles->array[i].v2 = 5;
     self->mesh->triangles->array[i].v3 = 6;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -161,6 +170,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 1;
     self->mesh->triangles->array[i].v2 = 6;
     self->mesh->triangles->array[i].v3 = 2;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -171,6 +181,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 4;
     self->mesh->triangles->array[i].v2 = 0;
     self->mesh->triangles->array[i].v3 = 3;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
@@ -180,6 +191,7 @@ static inline void player_generate_mesh(Player *const self) {
     self->mesh->triangles->array[i].v1 = 4;
     self->mesh->triangles->array[i].v2 = 3;
     self->mesh->triangles->array[i].v3 = 7;
+    self->mesh->triangles->array[i].texture = NULL;
     self->mesh->triangles->array[i].color = player_colors[self->player_index];
     self->mesh->triangles->array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
@@ -452,7 +464,7 @@ static inline void player_update_mesh(Player *const self) {
 
     for (size_t i = 0; i < self->mesh->vertices->length; ++i) {
         self->mesh->vertices->array[i] =
-            mul_m4f_v3f(rotation_y_matrix, self->mesh->vertices->array[i]);
+            mul_m4f_v3f(rotation_y_matrix, self->mesh->vertices->array[i]).xyz;
         self->mesh->vertices->array[i] =
             v3f_add(self->mesh->vertices->array[i], self->position);
     }

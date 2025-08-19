@@ -8,7 +8,6 @@
 #include "camera.h"
 #include "config.h"
 #include "triangle3D_array.h"
-#include "utils.h"
 #include "window.h"
 
 typedef struct {
@@ -52,26 +51,32 @@ static inline v3f *mesh_get_viewed_vertices(
         malloc_or_exit(sizeof(*view_vertices) * self->vertices->length,
                        "failed to get viewed vertices");
     for (size_t i = 0; i < self->vertices->length; ++i) {
-        view_vertices[i] = mul_m4f_v3f(view_matrix, self->vertices->array[i]);
+        view_vertices[i] =
+            mul_m4f_v3f(view_matrix, self->vertices->array[i]).xyz;
     }
     return view_vertices;
 }
 
-static v3f plane_intersect(const Plane *const plane, const v3f v1, const v3f v2)
+static v4f plane_intersect(const Plane *const plane, const v4f v1, const v4f v2)
     NONNULL(1);
 
-static v3f plane_intersect(const Plane *const plane, const v3f v1,
-                           const v3f v2) {
+static v4f plane_intersect(const Plane *const plane, const v4f v1,
+                           const v4f v2) {
     assert(plane != NULL);
 
-    const v3f direction = v3f_sub(v1, v2);
+    const v3f direction = v4f_sub(v1, v2).xyz;
 
-    const float numerator = plane->d - v3f_dot(plane->normal, v1);
+    const float numerator = plane->d - v3f_dot(plane->normal, v1.xyz);
     const float denominator = v3f_dot(plane->normal, direction);
 
     assert(denominator != 0.0f);
 
-    return v3f_add(v1, v3f_mul(direction, numerator / denominator));
+    return v4f_add_v3f(v1, v3f_mul(direction, numerator / denominator));
+}
+
+static float get_interpolation(const v3f v1, const v3f v2, const v3f v3) {
+    const v3f v3_sub_v1 = v3f_sub(v3, v1);
+    return v3f_dot(v3f_sub(v2, v1), v3_sub_v1) / v3f_norm_squared(v3_sub_v1);
 }
 
 static void planes_clip_triangle(const Plane planes[6],
@@ -94,12 +99,11 @@ static void planes_clip_triangle(const Plane planes[6],
         return;
     }
 
-    const bool v1_in = v3f_dot(planes[plane_index].normal, triangle->v1) >=
-                       planes[plane_index].d;
-    const bool v2_in = v3f_dot(planes[plane_index].normal, triangle->v2) >=
-                       planes[plane_index].d;
-    const bool v3_in = v3f_dot(planes[plane_index].normal, triangle->v3) >=
-                       planes[plane_index].d;
+    const Plane *plane = &planes[plane_index];
+
+    const bool v1_in = v3f_dot(plane->normal, triangle->v1.xyz) >= plane->d;
+    const bool v2_in = v3f_dot(plane->normal, triangle->v2.xyz) >= plane->d;
+    const bool v3_in = v3f_dot(plane->normal, triangle->v3.xyz) >= plane->d;
 
     if (v1_in) {
         if (v2_in) {
@@ -108,51 +112,93 @@ static void planes_clip_triangle(const Plane planes[6],
                 return;
             }
 
-            const v3f a = plane_intersect(&planes[plane_index], triangle->v3,
-                                          triangle->v1);
-            const v3f b = plane_intersect(&planes[plane_index], triangle->v3,
-                                          triangle->v2);
+            const v4f intersect_v2_v3 =
+                plane_intersect(plane, triangle->v2, triangle->v3);
+            const v4f intersect_v1_v3 =
+                plane_intersect(plane, triangle->v1, triangle->v3);
+
+            const v2f uv_v2_v3 = v2f_lerp(
+                triangle->uv2, triangle->uv3,
+                get_interpolation(triangle->v2.xyz, intersect_v2_v3.xyz,
+                                  triangle->v3.xyz));
+            const v2f uv_v1_v3 = v2f_lerp(
+                triangle->uv1, triangle->uv3,
+                get_interpolation(triangle->v1.xyz, intersect_v1_v3.xyz,
+                                  triangle->v3.xyz));
+
             planes_clip_triangle(
                 planes, plane_index + 1,
-                triangle3D_init(
-                    &triangle->v1, &triangle->v2, &b,
+                triangle3D_init_v4f(
+                    &triangle->v1, &triangle->v2, &intersect_v2_v3,
+                    triangle->uv1, triangle->uv2, uv_v2_v3,
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR),
-                    triangle->color),
+                    triangle->texture, triangle->color),
                 array);
-            triangle->v2 = b;
-            triangle->v3 = a;
+
+            triangle->v2 = intersect_v2_v3;
+            triangle->v3 = intersect_v1_v3;
+            triangle->uv2 = uv_v2_v3;
+            triangle->uv3 = uv_v1_v3;
             triangle->edges &= TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V3_V1_FAR;
             planes_clip_triangle(planes, plane_index + 1, triangle, array);
             return;
         }
 
         if (v3_in) {
-            const v3f a = plane_intersect(&planes[plane_index], triangle->v2,
-                                          triangle->v1);
-            const v3f b = plane_intersect(&planes[plane_index], triangle->v2,
-                                          triangle->v3);
+            const v4f intersect_v1_v2 =
+                plane_intersect(plane, triangle->v1, triangle->v2);
+            const v4f intersect_v2_v3 =
+                plane_intersect(plane, triangle->v2, triangle->v3);
+
+            const v2f uv_v1_v2 = v2f_lerp(
+                triangle->uv1, triangle->uv2,
+                get_interpolation(triangle->v1.xyz, intersect_v1_v2.xyz,
+                                  triangle->v2.xyz));
+            const v2f uv_v2_v3 = v2f_lerp(
+                triangle->uv2, triangle->uv3,
+                get_interpolation(triangle->v2.xyz, intersect_v2_v3.xyz,
+                                  triangle->v3.xyz));
+
             planes_clip_triangle(
                 planes, plane_index + 1,
-                triangle3D_init(
-                    &triangle->v1, &a, &triangle->v3,
+                triangle3D_init_v4f(
+                    &triangle->v1, &intersect_v1_v2, &triangle->v3,
+                    triangle->uv1, uv_v1_v2, triangle->uv3,
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V3_V1 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V3_V1_FAR),
-                    triangle->color),
+                    triangle->texture, triangle->color),
                 array);
-            triangle->v1 = a;
-            triangle->v2 = b;
+
+            triangle->v1 = intersect_v1_v2;
+            triangle->v2 = intersect_v2_v3;
+            triangle->uv1 = uv_v1_v2;
+            triangle->uv2 = uv_v2_v3;
             triangle->edges &= TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V2_V3_FAR;
             planes_clip_triangle(planes, plane_index + 1, triangle, array);
             return;
         }
 
-        triangle->v2 =
-            plane_intersect(&planes[plane_index], triangle->v2, triangle->v1);
-        triangle->v3 =
-            plane_intersect(&planes[plane_index], triangle->v3, triangle->v1);
+        const v4f intersect_v1_v2 =
+            plane_intersect(plane, triangle->v1, triangle->v2);
+        const v4f intersect_v1_v3 =
+            plane_intersect(plane, triangle->v1, triangle->v3);
+
+        const v2f uv_v1_v2 =
+            v2f_lerp(triangle->uv1, triangle->uv2,
+                     get_interpolation(triangle->v1.xyz, intersect_v1_v2.xyz,
+                                       triangle->v2.xyz));
+        const v2f uv_v1_v3 =
+            v2f_lerp(triangle->uv1, triangle->uv3,
+                     get_interpolation(triangle->v1.xyz, intersect_v1_v3.xyz,
+                                       triangle->v3.xyz));
+
+        triangle->v2 = intersect_v1_v2;
+        triangle->v3 = intersect_v1_v3;
+        triangle->uv2 = uv_v1_v2;
+        triangle->uv3 = uv_v1_v3;
         triangle->edges &= (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V3_V1 |
                             TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V3_V1_FAR);
         planes_clip_triangle(planes, plane_index + 1, triangle, array);
@@ -161,30 +207,57 @@ static void planes_clip_triangle(const Plane planes[6],
 
     if (v2_in) {
         if (v3_in) {
-            const v3f a = plane_intersect(&planes[plane_index], triangle->v1,
-                                          triangle->v2);
-            const v3f b = plane_intersect(&planes[plane_index], triangle->v1,
-                                          triangle->v3);
+            const v4f intersect_v1_v2 =
+                plane_intersect(plane, triangle->v1, triangle->v2);
+            const v4f intersect_v1_v3 =
+                plane_intersect(plane, triangle->v1, triangle->v3);
+
+            const v2f uv_v1_v2 = v2f_lerp(
+                triangle->uv1, triangle->uv2,
+                get_interpolation(triangle->v1.xyz, intersect_v1_v2.xyz,
+                                  triangle->v2.xyz));
+            const v2f uv_v1_v3 = v2f_lerp(
+                triangle->uv1, triangle->uv3,
+                get_interpolation(triangle->v1.xyz, intersect_v1_v3.xyz,
+                                  triangle->v3.xyz));
+
             planes_clip_triangle(
                 planes, plane_index + 1,
-                triangle3D_init(
-                    &a, &triangle->v2, &triangle->v3,
+                triangle3D_init_v4f(
+                    &intersect_v1_v2, &triangle->v2, &triangle->v3, uv_v1_v2,
+                    triangle->uv2, triangle->uv3,
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR),
-                    triangle->color),
+                    triangle->texture, triangle->color),
                 array);
-            triangle->v1 = b;
-            triangle->v2 = a;
+
+            triangle->v1 = intersect_v1_v3;
+            triangle->v2 = intersect_v1_v2;
+            triangle->uv1 = uv_v1_v3;
+            triangle->uv2 = uv_v1_v2;
             triangle->edges &= TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V3_V1_FAR;
             planes_clip_triangle(planes, plane_index + 1, triangle, array);
             return;
         }
+        const v4f intersect_v1_v2 =
+            plane_intersect(plane, triangle->v1, triangle->v2);
+        const v4f intersect_v2_v3 =
+            plane_intersect(plane, triangle->v2, triangle->v3);
 
-        triangle->v1 =
-            plane_intersect(&planes[plane_index], triangle->v1, triangle->v2);
-        triangle->v3 =
-            plane_intersect(&planes[plane_index], triangle->v3, triangle->v2);
+        const v2f uv_v1_v2 =
+            v2f_lerp(triangle->uv1, triangle->uv2,
+                     get_interpolation(triangle->v1.xyz, intersect_v1_v2.xyz,
+                                       triangle->v3.xyz));
+        const v2f uv_v2_v3 =
+            v2f_lerp(triangle->uv2, triangle->uv3,
+                     get_interpolation(triangle->v2.xyz, intersect_v2_v3.xyz,
+                                       triangle->v3.xyz));
+
+        triangle->v1 = intersect_v1_v2;
+        triangle->v3 = intersect_v2_v3;
+        triangle->uv1 = uv_v1_v2;
+        triangle->uv3 = uv_v2_v3;
         triangle->edges &= (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                             TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR);
         planes_clip_triangle(planes, plane_index + 1, triangle, array);
@@ -192,10 +265,24 @@ static void planes_clip_triangle(const Plane planes[6],
     }
 
     if (v3_in) {
-        triangle->v1 =
-            plane_intersect(&planes[plane_index], triangle->v1, triangle->v3);
-        triangle->v2 =
-            plane_intersect(&planes[plane_index], triangle->v2, triangle->v3);
+        const v4f intersect_v2_v3 =
+            plane_intersect(plane, triangle->v2, triangle->v3);
+        const v4f intersect_v1_v3 =
+            plane_intersect(plane, triangle->v1, triangle->v3);
+
+        const v2f uv_v2_v3 =
+            v2f_lerp(triangle->uv2, triangle->uv3,
+                     get_interpolation(triangle->v2.xyz, intersect_v2_v3.xyz,
+                                       triangle->v3.xyz));
+        const v2f uv_v1_v3 =
+            v2f_lerp(triangle->uv1, triangle->uv3,
+                     get_interpolation(triangle->v1.xyz, intersect_v1_v3.xyz,
+                                       triangle->v3.xyz));
+
+        triangle->v1 = intersect_v1_v3;
+        triangle->v2 = intersect_v2_v3;
+        triangle->uv1 = uv_v1_v3;
+        triangle->uv2 = uv_v2_v3;
         triangle->edges &= (TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 |
                             TRIANGLE_EDGE_V2_V3_FAR | TRIANGLE_EDGE_V3_V1_FAR);
         planes_clip_triangle(planes, plane_index + 1, triangle, array);
@@ -256,13 +343,15 @@ static inline Triangle3DArray *mesh_get_viewed_triangles(
     v3f *view_vertices = mesh_get_viewed_vertices(self, camera);
 
     for (size_t i = 0; i < self->triangles->length; ++i) {
-        Triangle3D *const triangle = triangle3D_init(
-            &view_vertices[self->triangles->array[i].v1],
-            &view_vertices[self->triangles->array[i].v2],
-            &view_vertices[self->triangles->array[i].v3],
-            self->triangles->array[i].edges, self->triangles->array[i].color);
+        const TriangleIndex *const triangle_index = &self->triangles->array[i];
+        Triangle3D *const triangle = triangle3D_init_v3f(
+            &view_vertices[triangle_index->v1],
+            &view_vertices[triangle_index->v2],
+            &view_vertices[triangle_index->v3], triangle_index->uv1,
+            triangle_index->uv2, triangle_index->uv3, triangle_index->edges,
+            triangle_index->texture, triangle_index->color);
         const v3f triangle_normal = triangle3D_get_normal(triangle);
-        if (v3f_dot(triangle->v1, triangle_normal) < 0.0f) {
+        if (v3f_dot(triangle->v1.xyz, triangle_normal) < 0.0f) {
             clip_triangle(camera, triangle, array);
         } else {
             triangle3D_destroy(triangle);
@@ -288,14 +377,15 @@ void mesh_render(const Mesh *const restrict self,
 
     m4f camera_rotation_matrix;
     camera_get_rotation_matrix(camera, camera_rotation_matrix);
-    const v3f light = mul_m4f_v3f(camera_rotation_matrix,
+    const v4f light = mul_m4f_v3f(camera_rotation_matrix,
                                   v3f_normalize((v3f){3.0f, 2.0f, -1.0f}));
 
     for (size_t j = 0; j < viewed_triangles->length; ++j) {
         Triangle3D *triangle = viewed_triangles->array[j];
-        const float triangle_distance_squared = min3_float(
-            v3f_norm_squared(triangle->v1), v3f_norm_squared(triangle->v2),
-            v3f_norm_squared(triangle->v3));
+        const float triangle_distance_squared =
+            min3_float(v3f_norm_squared(triangle->v1.xyz),
+                       v3f_norm_squared(triangle->v2.xyz),
+                       v3f_norm_squared(triangle->v3.xyz));
 
         if (triangle_distance_squared >
             MESH_SHADOW_DISTANCE * MESH_SHADOW_DISTANCE) {
@@ -306,7 +396,7 @@ void mesh_render(const Mesh *const restrict self,
             const uint8_t shade_index =
                 sizeof(shade_char) *
                 clamp_float(
-                    v3f_dot(light,
+                    v3f_dot(light.xyz,
                             v3f_normalize(triangle3D_get_normal(triangle))),
                     0.0f, 0.999f);
             triangle->shade = shade_char[shade_index];
@@ -324,9 +414,9 @@ void mesh_render(const Mesh *const restrict self,
             }
         }
 
-        triangle->v1 = mul_m4f_v3f(camera->projection_matrix, triangle->v1);
-        triangle->v2 = mul_m4f_v3f(camera->projection_matrix, triangle->v2);
-        triangle->v3 = mul_m4f_v3f(camera->projection_matrix, triangle->v3);
+        triangle->v1 = mul_m4f_v3f(camera->projection_matrix, triangle->v1.xyz);
+        triangle->v2 = mul_m4f_v3f(camera->projection_matrix, triangle->v2.xyz);
+        triangle->v3 = mul_m4f_v3f(camera->projection_matrix, triangle->v3.xyz);
 
         triangle->v1.x = viewport->x_offset +
                          viewport->width * (triangle->v1.x + 1.0f) / 2.0f;

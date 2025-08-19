@@ -1,8 +1,6 @@
 #include "perlin_noise.h"
 
-static inline float lerp(const float a, const float b, const float t) {
-    return (1.0f - t) * a + t * b;
-}
+#include "utils.h"
 
 static inline float fade(const float t) {
     return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);

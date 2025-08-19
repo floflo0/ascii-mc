@@ -20,19 +20,21 @@ void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output) {
     }
 }
 
-v3f mul_m4f_v3f(const m4f mat, const v3f vec) {
+v4f mul_m4f_v3f(const m4f mat, const v3f vec) {
     assert(mat != NULL);
 
-    const v3f output = {
+    v4f output = {
         .x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3],
         .y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7],
         .z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11],
+        .w = mat[12] * vec.x + mat[13] * vec.y + mat[14] * vec.z + mat[15],
     };
 
-    const float w =
-        mat[12] * vec.x + mat[13] * vec.y + mat[14] * vec.z + mat[15];
-
-    if (w != 0.0f) return v3f_div(output, w);
+    if (output.w != 0.0f) {
+        output.x /= output.w;
+        output.y /= output.w;
+        output.z /= output.w;
+    }
 
     return output;
 }

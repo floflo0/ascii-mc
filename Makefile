@@ -23,7 +23,9 @@ endif
 LDFLAGS := $(shell pkg-config --libs $(LIBS)) -lm -lpthread
 SRC_DIR := src
 BUILD_DIR := build
+ASSETS_DIR := assets
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+TEXTURE_OBJS := $(patsubst $(ASSETS_DIR)/%.ppm,$(BUILD_DIR)/%.o,$(wildcard $(ASSETS_DIR)/*.ppm))
 EXEC := $(BUILD_DIR)/$(NAME)
 
 TESTS_DIR := tests
@@ -40,10 +42,16 @@ all: $(EXEC)
 $(BUILD_DIR):
 	mkdir --parents --verbose $(BUILD_DIR)
 
-$(EXEC): $(OBJS) | $(BUILD_DIR)
+$(EXEC): $(OBJS) $(TEXTURE_OBJS) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 -include $(OBJS:.o=.d)
+-include $(TEXTURE_OBJS:.o=.d)
+
+$(TEXTURE_OBJS): CFLAGS := $(CFLAGS) -Werror -I$(SRC_DIR)
+
+$(BUILD_DIR)/%.c: $(ASSETS_DIR)/%.ppm scripts/embed_texture.py | $(BUILD_DIR)
+	scripts/embed_texture.py $< $@
 
 # We need to keep division by 0 to make infinity.
 $(BUILD_DIR)/collision.o: CFLAGS := $(CFLAGS) -fno-fast-math

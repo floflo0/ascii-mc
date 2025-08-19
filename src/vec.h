@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdbool.h>
 
+#include "utils.h"
+
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 
 typedef struct {
@@ -21,10 +23,17 @@ typedef struct {
     float x, y, z;
 } v3f;
 
+typedef union {
+    struct {
+        float x, y, z, w;
+    };
+    v3f xyz;
+} v4f;
+
 typedef float m4f[16];
 
 void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output) NONNULL();
-v3f mul_m4f_v3f(const m4f mat, const v3f vec) NONNULL(1);
+v4f mul_m4f_v3f(const m4f mat, const v3f vec) NONNULL(1);
 
 void m4f_rotation_x(m4f rotation_matrix, const float angle) NONNULL(1);
 void m4f_rotation_y(m4f rotation_matrix, const float angle) NONNULL(1);
@@ -69,6 +78,13 @@ static inline v2i v2f_floor(const v2f vec) {
     };
 }
 
+static inline v2f v2f_sub(const v2f v1, const v2f v2) {
+    return (v2f){
+        .x = v1.x - v2.x,
+        .y = v1.y - v2.y,
+    };
+}
+
 static inline v2f v2f_sub_v2i(const v2f v1, const v2i v2) {
     return (v2f){
         .x = v1.x - v2.x,
@@ -87,11 +103,18 @@ static inline float v2f_dot(const v2f v1, const v2f v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
-static inline int v2i_get_determinant(const v2i a, const v2i b, const v2i c) {
-    const v2i ab = v2i_sub(b, a);
-    const v2i ac = v2i_sub(c, a);
+static inline float v2f_get_determinant(const v2f a, const v2f b, const v2f c) {
+    const v2f ab = v2f_sub(b, a);
+    const v2f ac = v2f_sub(c, a);
 
     return (ab.x * ac.y) - (ab.y * ac.x);
+}
+
+static inline v2f v2f_lerp(const v2f v1, const v2f v2, const float t) {
+    return (v2f){
+        .x = lerp(v1.x, v2.x, t),
+        .y = lerp(v1.y, v2.y, t),
+    };
 }
 
 static inline float v3f_dot(const v3f v1, const v3f v2) {
@@ -141,5 +164,32 @@ static inline v3f v3f_cross_product(const v3f v1, const v3f v2) {
         .x = v1.y * v2.z - v1.z * v2.y,
         .y = v1.z * v2.x - v1.x * v2.z,
         .z = v1.x * v2.y - v1.y * v2.x,
+    };
+}
+
+static inline v4f v3f_to_v4f(const v3f vec) {
+    return (v4f){
+        .x = vec.x,
+        .y = vec.y,
+        .z = vec.z,
+        1.0f,
+    };
+}
+
+static inline v4f v4f_sub(const v4f v1, const v4f v2) {
+    return (v4f){
+        .x = v1.x - v2.x,
+        .y = v1.y - v2.y,
+        .z = v1.z - v2.z,
+        .w = v1.w - v2.w,
+    };
+}
+
+static inline v4f v4f_add_v3f(const v4f v1, const v3f v2) {
+    return (v4f){
+        .x = v1.x + v2.x,
+        .y = v1.y + v2.y,
+        .z = v1.z + v2.z,
+        .w = v1.w,
     };
 }

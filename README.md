@@ -29,7 +29,7 @@ make BUILD_TYPE=release
 To run the game:
 
 ```sh
-./main
+build/ascii-mc
 ```
 ## Development
 
@@ -38,7 +38,7 @@ interfere with the game's terminal display, making it glitchy. To fix this, you
 can redirect the logs to a file:
 
 ```sh
-./main 2> logs.txt
+build/ascii-mc 2> logs.txt
 ```
 
 You can then see the logs from an other terminal window:

@@ -1,6 +1,4 @@
-main
-src/*.o
-src/*.d
+build
 tests/*.o
 tests/*.d
 tests/test

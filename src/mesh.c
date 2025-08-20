@@ -389,6 +389,7 @@ void mesh_render(const Mesh *const restrict self,
 
         if (triangle_distance_squared >
             MESH_SHADOW_DISTANCE * MESH_SHADOW_DISTANCE) {
+            triangle->texture = NULL;
             triangle->color = MESH_SHADOW_COLOR;
             triangle->shade = shade_char[0];
         } else {

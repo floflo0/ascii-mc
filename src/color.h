@@ -17,7 +17,7 @@
     COLOR(BLUE, 94)         \
     COLOR(MAGENTA, 95)      \
     COLOR(CYAN, 96)         \
-    COLOR(WHITE, 37)
+    COLOR(WHITE, 97)
 
 typedef enum : uint8_t {
 #define COLOR(name, code) COLOR_##name,

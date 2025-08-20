@@ -25,14 +25,15 @@
 #define SWITCH_TO_ALTERNATE_SCREEN "\033[?1049h"
 #define SWITCH_TO_REGULAR_SCREEN "\033[?1049l"
 
-#define PIXEL_MAX_SIZE 6  // color: 5, char: 1
+#define PIXEL_MAX_SIZE 6      // color: 5, char: 1
+#define PIXEL_MAX_SIZE_TTY 9  // color: 8, char: 1
 
 #define CURSOR_POSITION_BUFFER_CAPACITY 27
 
-#define DISPLAY_BUFFER_SIZE(display_buffer, window_size)          \
-    (sizeof(*display_buffer) * PIXEL_MAX_SIZE * window_size +     \
-     sizeof(MOVE_CURSOR_TOP_LEFT) - 1 + sizeof(HIDE_CURSOR) - 1 + \
-     sizeof(SHOW_CURSOR) - 1 + sizeof(TEXT_BOLD) - 1 +            \
+#define DISPLAY_BUFFER_SIZE(display_buffer, window_size, pixel_max_size) \
+    (sizeof(*display_buffer) * (pixel_max_size) * (window_size) +        \
+     sizeof(MOVE_CURSOR_TOP_LEFT) - 1 + sizeof(HIDE_CURSOR) - 1 +        \
+     sizeof(SHOW_CURSOR) - 1 + sizeof(TEXT_BOLD) - 1 +                   \
      CURSOR_POSITION_BUFFER_CAPACITY)
 
 #define WRITE(string_literal) \
@@ -95,17 +96,34 @@ static void handle_sigcont(const int _sig) {
     window_show_cursor();
 }
 
+static bool is_run_in_tty(void) {
+    const char *const tty_name = ttyname(STDIN_FILENO);
+    const bool is_tty =
+        tty_name != NULL &&
+        strncmp(tty_name, "/dev/tty", sizeof("/dev/tty") - 1) == 0;
+    if (!is_tty) {
+        const char *const term = getenv("TERM");
+        return term != NULL && strcmp(term, "linux") == 0;
+    }
+    return true;
+}
+
 void window_init(void) {
     assert(!window.is_init);
+
+    window.is_run_in_tty = is_run_in_tty();
+    log_debugf("running in a tty: %s", window.is_run_in_tty ? "true" : "false");
 
     get_terminal_size(&window.width, &window.height);
 
     const size_t window_size = window.width * window.height;
     window.pixels = malloc_or_exit(sizeof(*window.pixels) * window_size,
                                    "failed to create window pixels buffer");
-    window.display_buffer =
-        malloc_or_exit(DISPLAY_BUFFER_SIZE(window.display_buffer, window_size),
-                       "failed to create window display buffer");
+    window.display_buffer = malloc_or_exit(
+        DISPLAY_BUFFER_SIZE(
+            window.display_buffer, window_size,
+            window.is_run_in_tty ? PIXEL_MAX_SIZE_TTY : PIXEL_MAX_SIZE),
+        "failed to create window display buffer");
 
     if (WRITE(SWITCH_TO_ALTERNATE_SCREEN) < 0) {
         log_errorf_errno("failed to switch to alternate screen: write failed");
@@ -169,6 +187,8 @@ static inline void window_detect_resize(void) {
     int width, height;
     get_terminal_size(&width, &height);
     if (window.width != width || window.height != height) {
+        log_debugf("resize window from (%d, %d) to (%d, %d)", window.width,
+                   window.height, width, height);
         const size_t old_window_size = window.width * window.height;
         for (size_t i = 0; i < old_window_size; ++i) {
             mutex_destroy(&window.pixels[i].mutex);
@@ -182,7 +202,9 @@ static inline void window_detect_resize(void) {
         }
         window.display_buffer = realloc_or_exit(
             window.display_buffer,
-            DISPLAY_BUFFER_SIZE(window.display_buffer, new_window_size),
+            DISPLAY_BUFFER_SIZE(
+                window.display_buffer, new_window_size,
+                window.is_run_in_tty ? PIXEL_MAX_SIZE_TTY : PIXEL_MAX_SIZE),
             "failed to resize window display buffer");
 
         window.width = width;
@@ -232,8 +254,14 @@ void window_clear(void) {
 void window_flush(void) {
     assert(window.is_init);
 
-    static const char *const colors[COLOR_COUNT] = {
+    static const char *const colors_normal[COLOR_COUNT] = {
 #define COLOR(name, code) [COLOR_##name] = "\033[" #code "m",
+        COLORS
+#undef COLOR
+    };
+
+    static const char *const colors_tty[COLOR_COUNT] = {
+#define COLOR(name, code) [COLOR_##name] = "\033[22;" #code "m",
         COLORS
 #undef COLOR
     };
@@ -245,7 +273,12 @@ void window_flush(void) {
     } while (0)
 
     size_t display_buffer_size = 0;
-    DISPLAY_BUFFER_APPEND(TEXT_BOLD);
+    const char *const *colors = colors_normal;
+    if (window.is_run_in_tty) {
+        colors = colors_tty;
+    } else {
+        DISPLAY_BUFFER_APPEND(TEXT_BOLD);
+    }
     DISPLAY_BUFFER_APPEND(HIDE_CURSOR);
     DISPLAY_BUFFER_APPEND(MOVE_CURSOR_TOP_LEFT);
     DISPLAY_BUFFER_APPEND(colors[window.pixels[0].color]);

@@ -24,6 +24,7 @@ typedef struct {
     v2i cursor_position;
     struct termios old_attr;
     bool show_cursor;
+    bool is_run_in_tty;
 #ifndef NDEBUG
     bool is_init;
 #endif

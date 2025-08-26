@@ -1,6 +1,6 @@
 # ASCII-MC
 
-A simple minecraft clone that render in ASCII characters in the terminal.
+A simple Minecraft clone that render in ASCII characters in the terminal.
 
 ## Features
 
@@ -57,7 +57,7 @@ tail -f logs.txt
 
 ### Tests
 
-This project uses [Check](https://libcheck.github.io/check/) for unit testting.
+This project uses [Check](https://libcheck.github.io/check/) for unit testing.
 
 To run tests:
 

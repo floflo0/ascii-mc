@@ -26,11 +26,19 @@ make BUILD_TYPE=release
 
 ## Usage
 
-To run the game:
+To run the game in your terminal or TTY:
 
 ```sh
 build/ascii-mc
 ```
+
+Alternatively you can launch the game with a custom alacritty config that
+imitate a Linux TTY:
+
+```sh
+alacritty --config-file alacritty.toml --command build/ascii-mc
+```
+
 ## Development
 
 In debug mode, the engine writes logs to standard error (stderr). These logs can

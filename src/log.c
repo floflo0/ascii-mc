@@ -12,15 +12,15 @@
 static char *program_name = NULL;
 
 void logger_init(const char *const restrict new_program_name) {
+    assert(program_name == NULL &&
+           "logger module has already been initialized");
     assert(new_program_name != NULL);
-    const size_t program_name_size = strlen(new_program_name) + 1;
-    program_name = malloc(sizeof(*program_name) * program_name_size);
+    program_name = strdup(new_program_name);
     if (program_name == NULL) {
         fprintf(stderr, "%s: error: failed to allocate memory: %s\n",
                 new_program_name, strerror(errno));
         exit(EXIT_FAILURE);
     }
-    memcpy(program_name, new_program_name, program_name_size);
 }
 
 void log_quit(void) {
@@ -30,14 +30,23 @@ void log_quit(void) {
 
 void _log_errorf(location_param const char *const restrict format, ...) {
     assert(program_name && "logger module hasn't been initialized");
-    assert(format != NULL);
-    fprintf(stderr, "%s: ", program_name);
 #ifndef PROD
     assert(file != NULL);
     assert(function_name != NULL);
-    fprintf(stderr, "%s:%lu: %s: ", file, line, function_name);
 #endif
-    fprintf(stderr, "error: ");
+    assert(format != NULL);
+    fprintf(stderr,
+            "%s: "
+#ifndef PROD
+            "%s:%lu: %s: "
+#endif
+            "error: ",
+            program_name
+#ifndef PROD
+            ,
+            file, line, function_name
+#endif
+    );
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -47,14 +56,23 @@ void _log_errorf(location_param const char *const restrict format, ...) {
 
 void _log_errorf_errno(location_param const char *const restrict format, ...) {
     assert(program_name && "logger module hasn't been initialized");
-    assert(format != NULL);
-    fprintf(stderr, "%s: ", program_name);
 #ifndef PROD
     assert(file != NULL);
     assert(function_name != NULL);
-    fprintf(stderr, "%s:%lu: %s: ", file, line, function_name);
 #endif
-    fprintf(stderr, "error: ");
+    assert(format != NULL);
+    fprintf(stderr,
+            "%s: "
+#ifndef PROD
+            "%s:%lu: %s: "
+#endif
+            "error: ",
+            program_name
+#ifndef PROD
+            ,
+            file, line, function_name
+#endif
+    );
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -68,6 +86,7 @@ void _log_debugf(const char *const restrict file, const size_t line,
                  const char *const restrict format, ...) {
     assert(program_name && "logger module hasn't been initialized");
     assert(file != NULL);
+    assert(function_name != NULL);
     assert(format != NULL);
     fprintf(DEBUG_OUT, "%s: %s:%lu: %s: debug: ", program_name, file, line,
             function_name);

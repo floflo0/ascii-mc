@@ -20,6 +20,7 @@
 
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
+#define RESET_TEXT_STYLE "\033[0m"
 #define TEXT_BOLD "\033[1m"
 #define MOVE_CURSOR_TOP_LEFT "\033[H"
 #define SWITCH_TO_ALTERNATE_SCREEN "\033[?1049h"
@@ -36,8 +37,10 @@
      sizeof(SHOW_CURSOR) - 1 + sizeof(TEXT_BOLD) - 1 +                   \
      CURSOR_POSITION_BUFFER_CAPACITY)
 
+#define WINDOW_FD STDOUT_FILENO
+
 #define WRITE(string_literal) \
-    write(STDOUT_FILENO, (string_literal), sizeof((string_literal)) - 1)
+    write(WINDOW_FD, (string_literal), sizeof((string_literal)) - 1)
 
 Window window = {
     .width = 0,
@@ -53,7 +56,7 @@ Window window = {
 
 static void window_restore_terminal_attr(void) {
     assert(window.is_init);
-    if (tcsetattr(STDOUT_FILENO, TCSANOW, &window.old_attr)) {
+    if (tcsetattr(WINDOW_FD, TCSANOW, &window.old_attr)) {
         log_errorf_errno(TCSETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
     }
@@ -68,7 +71,7 @@ static void get_terminal_size(int *const restrict width,
     assert(height != NULL);
 
     struct winsize window_size;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &window_size)) {
+    if (ioctl(WINDOW_FD, TIOCGWINSZ, &window_size)) {
         log_errorf_errno("failed to get the terminal size");
         exit(EXIT_FAILURE);
     }
@@ -90,6 +93,13 @@ static void window_hide_cursor(void) {
     }
 }
 
+static void window_reset_text_style(void) {
+    if (WRITE(RESET_TEXT_STYLE) < 0) {
+        log_errorf_errno("failed to reset text style: write failed");
+        exit(EXIT_FAILURE);
+    }
+}
+
 static void handle_sigcont(const int _sig) {
     (void)_sig;
     log_debugf("SIGCONT received");
@@ -97,9 +107,12 @@ static void handle_sigcont(const int _sig) {
 }
 
 static bool is_run_in_tty(void) {
-    const char *const tty_name = ttyname(STDIN_FILENO);
+    const char *const tty_name = ttyname(WINDOW_FD);
+    if (tty_name == NULL) {
+        log_errorf_errno("failed to get tty name");
+        exit(EXIT_FAILURE);
+    }
     const bool is_tty =
-        tty_name != NULL &&
         strncmp(tty_name, "/dev/tty", sizeof("/dev/tty") - 1) == 0;
     if (!is_tty) {
         const char *const term = getenv("TERM");
@@ -108,11 +121,13 @@ static bool is_run_in_tty(void) {
     return true;
 }
 
+#define BOOL_TO_STR(value) ((value) ? "true" : "false")
+
 void window_init(void) {
     assert(!window.is_init);
 
     window.is_run_in_tty = is_run_in_tty();
-    log_debugf("running in a tty: %s", window.is_run_in_tty ? "true" : "false");
+    log_debugf("running in a tty: %s", BOOL_TO_STR(window.is_run_in_tty));
 
     get_terminal_size(&window.width, &window.height);
 
@@ -130,13 +145,13 @@ void window_init(void) {
         exit(EXIT_FAILURE);
     }
 
-    if (tcgetattr(STDOUT_FILENO, &window.old_attr)) {
+    if (tcgetattr(WINDOW_FD, &window.old_attr)) {
         log_errorf_errno(TCGETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
     }
 
     struct termios attr;
-    if (tcgetattr(STDOUT_FILENO, &attr)) {
+    if (tcgetattr(WINDOW_FD, &attr)) {
         log_errorf_errno(TCGETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
     }
@@ -144,7 +159,7 @@ void window_init(void) {
     attr.c_oflag &= ~(OPOST);
     attr.c_lflag &= ~(ICANON | ECHO | IEXTEN | ISIG);
     attr.c_cc[VMIN] = 0;
-    if (tcsetattr(STDOUT_FILENO, TCSANOW, &attr)) {
+    if (tcsetattr(WINDOW_FD, TCSANOW, &attr)) {
         log_errorf_errno(TCSETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
     }
@@ -168,6 +183,7 @@ void window_init(void) {
 void window_quit(void) {
     assert(window.is_init);
     window_show_cursor();
+    window_reset_text_style();
     window_restore_terminal_attr();
 
     if (WRITE(SWITCH_TO_REGULAR_SCREEN) < 0) {
@@ -175,6 +191,10 @@ void window_quit(void) {
         exit(EXIT_FAILURE);
     }
 
+    const size_t window_size = window.width * window.height;
+    for (size_t i = 0; i < window_size; ++i) {
+        mutex_destroy(&window.pixels[i].mutex);
+    }
     free(window.pixels);
     free(window.display_buffer);
 #ifndef NDEBUG
@@ -241,11 +261,9 @@ void window_update(void) {
 
 void window_clear(void) {
     assert(window.is_init);
-    for (int y = 0; y < window.height; ++y) {
-        const int row_offset = y * window.width;
-        for (int x = 0; x < window.width; ++x) {
-            window_set_pixel(row_offset + x, ' ', COLOR_WHITE, FLT_MAX);
-        }
+    const size_t window_size = window.width * window.height;
+    for (size_t i = 0; i < window_size; ++i) {
+        window_set_pixel(i, WINDOW_CLEAR_CHAR, WINDOW_CLEAR_COLOR, FLT_MAX);
     }
 }
 
@@ -283,18 +301,15 @@ void window_flush(void) {
     DISPLAY_BUFFER_APPEND(MOVE_CURSOR_TOP_LEFT);
     DISPLAY_BUFFER_APPEND(colors[window.pixels[0].color]);
     Color last_color = window.pixels[0].color;
-    for (int y = 0; y < window.height; ++y) {
-        const int row_offset = y * window.width;
-        for (int x = 0; x < window.width; ++x) {
-            const int index = row_offset + x;
-            const Color color = window.pixels[index].color;
-            if (color != last_color) {
-                DISPLAY_BUFFER_APPEND(colors[color]);
-                last_color = color;
-            }
-            window.display_buffer[display_buffer_size++] =
-                window.pixels[index].chr;
+    const size_t window_size = window.width * window.height;
+    for (size_t i = 0; i < window_size; ++i) {
+        const Pixel *const pixel = &window.pixels[i];
+        const Color color = pixel->color;
+        if (color != last_color) {
+            DISPLAY_BUFFER_APPEND(colors[color]);
+            last_color = color;
         }
+        window.display_buffer[display_buffer_size++] = pixel->chr;
     }
     if (window.show_cursor) {
         char cursor_position_buffer[CURSOR_POSITION_BUFFER_CAPACITY];
@@ -305,7 +320,7 @@ void window_flush(void) {
         DISPLAY_BUFFER_APPEND(SHOW_CURSOR);
     }
 
-    if (write(STDOUT_FILENO, window.display_buffer, display_buffer_size) < 0) {
+    if (write(WINDOW_FD, window.display_buffer, display_buffer_size) < 0) {
         log_errorf_errno("failed to flush window: write failed");
         exit(EXIT_FAILURE);
     }

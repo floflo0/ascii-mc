@@ -76,6 +76,9 @@
 
 #define G_FORCE 32.0f  // m/s^2
 
+#define WINDOW_CLEAR_COLOR COLOR_WHITE
+#define WINDOW_CLEAR_CHAR ' '
+
 // Debug
 
 #ifdef PROD
@@ -96,9 +99,14 @@
 #define STATIC_ASSERT_IS_INTEGER(value) \
     static_assert((value) == (int)(value), #value " must be an integer")
 
-#define STATIC_ASSERT_IS_BOOLEAN(value)                                 \
-    static_assert(value == true || value == false, #value " must be a " \
-                                                          "boolean")
+#define STATIC_ASSERT_IS_CHAR(value) \
+    STATIC_ASSERT_IS_INTEGER(value); \
+    static_assert(-127 <= value && value <= 128)
+
+#define STATIC_ASSERT_IS_BOOLEAN(value)                   \
+    static_assert(value == true || value == false, #value \
+                  " must be a "                           \
+                  "boolean")
 
 #define STATIC_ASSERT_IS_COLOR(value)                                        \
     static_assert(value == COLOR_DARK_RED || value == COLOR_DARK_GREEN ||    \
@@ -221,5 +229,8 @@ static_assert(0.0f < MESH_SHADOW_DISTANCE);
 STATIC_ASSERT_IS_COLOR(MESH_SHADOW_COLOR);
 
 static_assert(0.0f <= G_FORCE);
+
+STATIC_ASSERT_IS_COLOR(WINDOW_CLEAR_COLOR);
+STATIC_ASSERT_IS_CHAR(WINDOW_CLEAR_CHAR);
 
 STATIC_ASSERT_IS_BOOLEAN(GAME_DEFAULT_SHOW_DEBUG_INFO);

@@ -29,7 +29,8 @@ typedef struct {
 
 static Game game;
 
-void game_init(const uint8_t number_players, const uint32_t world_seed) {
+void game_init(const uint8_t number_players, const uint32_t world_seed,
+               const bool force_tty, const bool force_no_tty) {
     assert(0 < number_players && number_players <= 4);
 
     game.running = true;
@@ -38,7 +39,7 @@ void game_init(const uint8_t number_players, const uint32_t world_seed) {
 
     game.world = world_create(world_seed);
 
-    window_init();
+    window_init(force_tty, force_no_tty);
 
     event_queue_init();
 

@@ -1,26 +1,46 @@
 #pragma once
 
+/**
+ * Command line arguments parser module.
+ */
+
+// FLAG(
+//     variable_name,
+//     name,
+//     short_name,
+//     description
+// )
+
+// LONG_FLAG(
+//     variable_name,
+//     name,
+//     description
+// )
+
+// FLAG_WITH_PARAM(
+//     variable_name,
+//     name,
+//     short_name,
+//     arg_name,
+//     description
+// )
+
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "args_config.h"
+
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-#define RETURNS_NONNULL __attribute__((returns_nonnull))
-
-#define HELP_SPACING "20"
-
-#define ARGS_FLAGS                                                        \
-    FLAG(help, "help", h, "show this help message and exit")              \
-    FLAG(version, "version", v, "show program's version number and exit") \
-    FLAG_WITH_PARAM(players, "players", p, PLAYERS, "TODO")               \
-    FLAG_WITH_PARAM(world_seed, "world-seed", s, SEED, "TODO")
 
 typedef struct {
 #define FLAG(variable_name, name, short_name, description) bool variable_name;
+#define LONG_FLAG(variable_name, name, description) bool variable_name;
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     const char *variable_name;
     ARGS_FLAGS
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
 } Args;
 

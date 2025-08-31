@@ -11,11 +11,13 @@ void print_usage(const char *const restrict program_name,
     fprintf(stream,
             "usage: %s "
 #define FLAG(variable_name, name, short_name, description) "[-" #short_name "] "
+#define LONG_FLAG(variable_name, name, description)
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     "[-" #short_name " " #arg_name "] "
             ARGS_FLAGS
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
             "\n",
             program_name);
@@ -25,24 +27,29 @@ void print_help(const char *const program_name) {
     print_usage(program_name, stdout);
     printf(
         "\n"
-        "TODO: description\n"
+        ARGS_DESCRIPTION "\n"
         "\n"
         "options:\n"
 #define FLAG(variable_name, name, short_name, description) \
-    "    -" #short_name ", --%-" HELP_SPACING "s " description "\n"
+    "    -" #short_name ", --%-" ARGS_HELP_SPACING "s " description "\n"
+#define LONG_FLAG(variable_name, name, description) \
+    "        --%-" ARGS_HELP_SPACING "s " description "\n"
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     FLAG(variable_name, name, short_name, description)
         ARGS_FLAGS
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
 
 #define FLAG(variable_name, name, short_name, description) , name
+#define LONG_FLAG(variable_name, name, description) , name
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     , name " " #arg_name
             ARGS_FLAGS
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
     );
 }
@@ -61,7 +68,10 @@ bool args_parse(Args *const restrict args, char *const restrict argv[],
     for (; *argv; ++argv) {
         if ((*argv)[0] == '-' && (*argv)[1]) {
             if ((*argv)[1] == '-') {
-#define FLAG(variable_name, name, short_name, description)                   \
+#define FLAG(variable_name, name, short_name, description) \
+    LONG_FLAG(variable_name, name, description)
+
+#define LONG_FLAG(variable_name, name, description)                          \
     {                                                                        \
         const char tested_arg[] = "--" name;                                 \
         const size_t tested_arg_length = strlen(tested_arg);                 \
@@ -103,6 +113,7 @@ bool args_parse(Args *const restrict args, char *const restrict argv[],
                 ARGS_FLAGS
 
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
 
                 print_usage(program_name, stderr);
@@ -115,6 +126,8 @@ bool args_parse(Args *const restrict args, char *const restrict argv[],
         args->variable_name = true;                        \
         continue;                                          \
     }
+
+#define LONG_FLAG(variable_name, name, description)
 
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
@@ -136,6 +149,7 @@ bool args_parse(Args *const restrict args, char *const restrict argv[],
                     ARGS_FLAGS
 
 #undef FLAG
+#undef LONG_FLAG
 #undef FLAG_WITH_PARAM
 
                     print_usage(program_name, stderr);

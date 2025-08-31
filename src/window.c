@@ -123,11 +123,19 @@ static bool is_run_in_tty(void) {
 
 #define BOOL_TO_STR(value) ((value) ? "true" : "false")
 
-void window_init(void) {
+void window_init(const bool force_tty, const bool force_no_tty) {
     assert(!window.is_init);
 
-    window.is_run_in_tty = is_run_in_tty();
-    log_debugf("running in a tty: %s", BOOL_TO_STR(window.is_run_in_tty));
+    if (force_tty) {
+        window.is_run_in_tty = true;
+        log_debugf("force tty mode");
+    } else if (force_no_tty) {
+        window.is_run_in_tty = false;
+        log_debugf("force not tty mode");
+    } else {
+        window.is_run_in_tty = is_run_in_tty();
+        log_debugf("running in a tty: %s", BOOL_TO_STR(window.is_run_in_tty));
+    }
 
     get_terminal_size(&window.width, &window.height);
 

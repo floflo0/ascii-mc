@@ -58,7 +58,7 @@ int main(const int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    game_init(number_players, world_seed);
+    game_init(number_players, world_seed, args.force_tty, args.force_no_tty);
     game_run();
     game_quit();
 

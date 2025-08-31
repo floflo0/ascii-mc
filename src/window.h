@@ -32,7 +32,7 @@ typedef struct {
 
 extern Window window;
 
-void window_init(void);
+void window_init(const bool force_tty, const bool force_no_tty);
 void window_quit(void);
 void window_update(void);
 void window_clear(void);

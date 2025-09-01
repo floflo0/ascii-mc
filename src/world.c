@@ -660,7 +660,11 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
                     } else if (is_desert) {
                         block_type = BLOCK_TYPE_SAND;
                     } else {
-                        block_type = BLOCK_TYPE_DIRT;
+                        if (y == max_y) {
+                            block_type = BLOCK_TYPE_GRASS;
+                        } else {
+                            block_type = BLOCK_TYPE_DIRT;
+                        }
                     }
                 } else {
                     block_type = BLOCK_TYPE_AIR;

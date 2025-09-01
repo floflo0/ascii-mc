@@ -25,11 +25,10 @@ void print_usage(const char *const restrict program_name,
 
 void print_help(const char *const program_name) {
     print_usage(program_name, stdout);
-    printf(
-        "\n"
-        ARGS_DESCRIPTION "\n"
-        "\n"
-        "options:\n"
+    printf("\n" ARGS_DESCRIPTION
+           "\n"
+           "\n"
+           "options:\n"
 #define FLAG(variable_name, name, short_name, description) \
     "    -" #short_name ", --%-" ARGS_HELP_SPACING "s " description "\n"
 #define LONG_FLAG(variable_name, name, description) \
@@ -37,7 +36,7 @@ void print_help(const char *const program_name) {
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     FLAG(variable_name, name, short_name, description)
-        ARGS_FLAGS
+           ARGS_FLAGS
 #undef FLAG
 #undef LONG_FLAG
 #undef FLAG_WITH_PARAM
@@ -47,7 +46,7 @@ void print_help(const char *const program_name) {
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     , name " " #arg_name
-            ARGS_FLAGS
+               ARGS_FLAGS
 #undef FLAG
 #undef LONG_FLAG
 #undef FLAG_WITH_PARAM

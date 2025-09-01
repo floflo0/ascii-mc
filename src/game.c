@@ -233,6 +233,15 @@ static inline void game_handle_char_event(const CharEvent *const char_event) {
             break;
 
 #ifdef GAME_KEYBOARD_CONTROL
+        case CHAR_EVENT_KEY_A:
+            player_break_block(&game.players[0], game.world);
+            break;
+
+        case CHAR_EVENT_KEY_E:
+            player_place_block(&game.players[0], game.players,
+                               game.number_players, game.world);
+            break;
+
         case CHAR_EVENT_KEY_SPACE:
             if (game.players[0].game_mode != PLAYER_GAME_MODE_SURVIVAL) {
                 game.players[0].input_velocity.y +=

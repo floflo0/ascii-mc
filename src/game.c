@@ -136,7 +136,6 @@ static inline void game_execute_command(const Command *const command) NONNULL();
 
 static inline void game_execute_command(const Command *const command) {
     assert(command != NULL);
-    (void)command;
 
     switch (command->command_name) {
         case COMMAND_ADD_PLAYER:

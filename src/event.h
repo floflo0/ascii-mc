@@ -10,13 +10,16 @@
 #define CHAR_EVENT_KEY_BACKSPACE 127
 
 #define CHAR_EVENT_KEY_SPACE ' '
+#define CHAR_EVENT_KEY_A 'a'
 #define CHAR_EVENT_KEY_B 'b'
 #define CHAR_EVENT_KEY_D 'd'
+#define CHAR_EVENT_KEY_E 'e'
 #define CHAR_EVENT_KEY_H 'h'
 #define CHAR_EVENT_KEY_J 'j'
 #define CHAR_EVENT_KEY_K 'k'
 #define CHAR_EVENT_KEY_L 'l'
 #define CHAR_EVENT_KEY_Q 'q'
+#define CHAR_EVENT_KEY_R 'r'
 #define CHAR_EVENT_KEY_S 's'
 #define CHAR_EVENT_KEY_Z 'z'
 #define CHAR_EVENT_KEY_COLON ':'

@@ -11,9 +11,11 @@ static const char *const block_type_to_string[] = {
 
 void block_init(Block *const block, const BlockType type) {
     assert(block != NULL);
+    assert(type < BLOCK_TYPE_COUNT && "invalid block type");
     block->type = type;
 }
 
 inline const char *block_get_name(const BlockType type) {
+    assert(type < BLOCK_TYPE_COUNT && "invalid block type");
     return block_type_to_string[type];
 }

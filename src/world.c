@@ -632,20 +632,22 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
 
             block_init(&self->blocks[x][0][z], BLOCK_TYPE_BEDROCK);
             for (int y = 1; y < CHUNK_HEIGHT; ++y) {
+                BlockType block_type;
                 if (y <= max_stone_y) {
-                    block_init(&self->blocks[x][y][z], BLOCK_TYPE_STONE);
+                    block_type = BLOCK_TYPE_STONE;
                 } else if (y <= max_y) {
                     if (y > CHUNK_GENERATION_MIN_SNOW_HEIGHT +
                                 min_snow_min_height_variation) {
-                        block_init(&self->blocks[x][y][z], BLOCK_TYPE_SNOW);
+                        block_type = BLOCK_TYPE_SNOW;
                     } else if (is_desert) {
-                        block_init(&self->blocks[x][y][z], BLOCK_TYPE_SAND);
+                        block_type = BLOCK_TYPE_SAND;
                     } else {
-                        block_init(&self->blocks[x][y][z], BLOCK_TYPE_DIRT);
+                        block_type = BLOCK_TYPE_DIRT;
                     }
                 } else {
-                    block_init(&self->blocks[x][y][z], BLOCK_TYPE_AIR);
+                    block_type = BLOCK_TYPE_AIR;
                 }
+                block_init(&self->blocks[x][y][z], block_type);
             }
         }
     }

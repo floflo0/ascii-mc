@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#define RETURNS_NONNULL __attribute__((returns_nonnull))
 
 // BLOCK(
 //     name,
@@ -44,4 +45,4 @@ typedef struct {
 
 void block_init(Block *const block, const BlockType type) NONNULL(1);
 
-const char *block_get_name(const BlockType type);
+const char *block_get_name(const BlockType type) RETURNS_NONNULL;

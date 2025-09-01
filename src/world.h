@@ -19,6 +19,7 @@ typedef struct {
 typedef struct {
     Chunk *chunks[WORLD_SIZE][WORLD_SIZE];  // chunks[x][z]
     uint32_t seed;
+    BlockType place_block;
 } World;
 
 World *world_create(const uint32_t seed) RETURNS_NONNULL;

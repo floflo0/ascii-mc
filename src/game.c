@@ -90,6 +90,20 @@ static inline void game_handle_button_down_event(
             break;
         }
 
+        case CONTROLLER_BUTTON_R:
+            game.world->place_block++;
+            if (game.world->place_block == BLOCK_TYPE_COUNT) {
+                game.world->place_block = 1;
+            }
+            break;
+
+        case CONTROLLER_BUTTON_L:
+            game.world->place_block--;
+            if (game.world->place_block == 0) {
+                game.world->place_block = BLOCK_TYPE_COUNT - 1;
+            }
+            break;
+
         case CONTROLLER_BUTTON_HOME:
             game.running = false;
             break;
@@ -240,6 +254,20 @@ static inline void game_handle_char_event(const CharEvent *const char_event) {
         case CHAR_EVENT_KEY_E:
             player_place_block(&game.players[0], game.players,
                                game.number_players, game.world);
+            break;
+
+        case CHAR_EVENT_KEY_R:
+            game.world->place_block++;
+            if (game.world->place_block == BLOCK_TYPE_COUNT) {
+                game.world->place_block = 1;
+            }
+            break;
+
+        case CONTROLLER_BUTTON_L:
+            game.world->place_block--;
+            if (game.world->place_block == 0) {
+                game.world->place_block = BLOCK_TYPE_COUNT - 1;
+            }
             break;
 
         case CHAR_EVENT_KEY_SPACE:

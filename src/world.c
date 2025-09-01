@@ -703,6 +703,7 @@ static void chunk_make_mesh_dirty(Chunk *const self) {
 
 World *world_create(const uint32_t seed) {
     World *const self = malloc_or_exit(sizeof(*self), "failed to create world");
+    self->place_block = BLOCK_TYPE_STONE;
 
     log_debugf("world seed: %u", seed);
     self->seed = seed;
@@ -1175,7 +1176,7 @@ void world_place_block(World *const self, const v3i block_position) {
     assert(chunk->blocks[x_index][block_position.y][z_index].type ==
            BLOCK_TYPE_AIR);
 
-    chunk->blocks[x_index][block_position.y][z_index].type = BLOCK_TYPE_STONE;
+    chunk->blocks[x_index][block_position.y][z_index].type = self->place_block;
 
     world_update_chunk_mesh_around_block(self, chunk, x_index, z_index);
 }

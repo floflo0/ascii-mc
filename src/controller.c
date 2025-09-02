@@ -764,14 +764,16 @@ v2f controller_get_stick(const Controller *const self,
     assert(self != NULL);
 
     int x_axis, y_axis;
-    if (stick == CONTROLLER_STICK_LEFT) {
-        x_axis = ABS_X;
-        y_axis = ABS_Y;
-    } else if (stick == CONTROLLER_STICK_RIGHT) {
-        x_axis = ABS_RX;
-        y_axis = ABS_RY;
-    } else {
-        assert(false && "unreachable");
+    switch (stick) {
+        case CONTROLLER_STICK_LEFT:
+            x_axis = ABS_X;
+            y_axis = ABS_Y;
+            break;
+
+        case CONTROLLER_STICK_RIGHT:
+            x_axis = ABS_RX;
+            y_axis = ABS_RY;
+            break;
     }
 
     const int x_value = libevdev_get_event_value(self->dev, EV_ABS, x_axis);

@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include <assert.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -772,7 +773,7 @@ bool player_get_targeted_block(const Player *const restrict self,
 
     Aabb aabb = {.size = {1.0f, 1.0f, 1.0f}};
 
-    float min_collision_time = INFINITY;
+    float min_collision_time = FLT_MAX;
     v3i position;
     for (position.x = min_x; position.x <= max_x; ++position.x) {
         for (position.y = min_y; position.y <= max_y; ++position.y) {

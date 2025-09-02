@@ -5,14 +5,13 @@
 
 #include "utils.h"
 
-Color texture_get(const Texture *const texture, float u, float v) {
+Color texture_get(const Texture *const texture, const float u, const  float v) {
     assert(texture != NULL);
 
-    u = clamp_float(u, 0.0f, 1.0f);
-    v = clamp_float(v, 0.0f, 1.0f);
+    const int texture_x = clamp_int(u * TEXTURE_SIZE, 0, TEXTURE_SIZE - 1);
+    const int texture_y = clamp_int(v * TEXTURE_SIZE, 0, TEXTURE_SIZE - 1);
 
-    const size_t texture_x = (size_t)(u * TEXTURE_SIZE);
-    const size_t texture_y = (size_t)(v * TEXTURE_SIZE);
-
-    return texture[texture_y * TEXTURE_SIZE + texture_x];
+    const Color color = texture[texture_y * TEXTURE_SIZE + texture_x];
+    assert(color < COLOR_COUNT);
+    return color;
 }

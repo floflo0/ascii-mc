@@ -8,5 +8,5 @@
 
 typedef Color Texture;
 
-Color texture_get(const Texture *const texture, const float u, const float v)
+Color texture_get(const Texture *const texture, const float u, const  float v)
     NONNULL(1);

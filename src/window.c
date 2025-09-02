@@ -313,6 +313,7 @@ void window_flush(void) {
     for (size_t i = 0; i < window_size; ++i) {
         const Pixel *const pixel = &window.pixels[i];
         const Color color = pixel->color;
+        assert(color < COLOR_COUNT);
         if (color != last_color) {
             DISPLAY_BUFFER_APPEND(colors[color]);
             last_color = color;

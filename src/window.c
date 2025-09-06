@@ -582,9 +582,9 @@ static void window_render_triangle_wireframe(const Triangle3D *const triangle)
 static void window_render_triangle_wireframe(const Triangle3D *const triangle) {
     assert(window.is_init);
     assert(triangle != NULL);
-    window_render_line(triangle->v1, triangle->v2, triangle->color);
-    window_render_line(triangle->v2, triangle->v3, triangle->color);
-    window_render_line(triangle->v3, triangle->v1, triangle->color);
+    window_render_line(triangle->v1.xyz, triangle->v2.xyz, triangle->color);
+    window_render_line(triangle->v2.xyz, triangle->v3.xyz, triangle->color);
+    window_render_line(triangle->v3.xyz, triangle->v1.xyz, triangle->color);
 }
 #endif
 

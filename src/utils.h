@@ -78,7 +78,7 @@ static inline int max3_int(const int a, const int b, const int c) {
 }
 
 static inline float clamp_int(const int value, const int minimum,
-                                const int maximum) {
+                              const int maximum) {
     return min_int(maximum, max_int(minimum, value));
 }
 

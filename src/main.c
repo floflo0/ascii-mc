@@ -14,8 +14,8 @@
 #endif
 
 int main(const int argc, char *argv[]) {
-    assert(argc > 0);
     (void)argc;
+    assert(argc > 0);
 
     const char *const program_name = basename(*argv++);
     assert(program_name != NULL);

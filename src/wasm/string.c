@@ -9,6 +9,15 @@
 #define STRTOK_TOKEN_CAPACITY 1024
 #define ERRNO_MAX EHWPOISON
 
+void *memcpy(void *restrict dest, const void *restrict src, const size_t n) {
+    assert(dest != NULL);
+    assert(src != NULL);
+    for (size_t i = 0; i < n; ++i) {
+        ((char *)dest)[i] = ((const char *)src)[i];
+    }
+    return dest;
+}
+
 void *memset(void *s, const int c, const size_t n) {
     assert(s != NULL);
     void *const original_pointer = s;

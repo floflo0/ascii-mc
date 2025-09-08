@@ -1,73 +1,28 @@
 #pragma once
 
-#include <libevdev/libevdev.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
-#include "array.h"
+#include "controller_array.h"
 #include "vec.h"
 
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #define RETURNS_NONNULL __attribute__((returns_nonnull))
 
-/**
- * Enum representing the buttons available on a controller.
- */
-typedef enum : uint8_t {
-    // Real buttons
-    CONTROLLER_BUTTON_B = 0,
-    CONTROLLER_BUTTON_A = 1,
-    CONTROLLER_BUTTON_Y = 2,
-    CONTROLLER_BUTTON_X = 3,
-    CONTROLLER_BUTTON_L = 4,
-    CONTROLLER_BUTTON_R = 5,
-    CONTROLLER_BUTTON_MINUS = 6,
-    CONTROLLER_BUTTON_PLUS = 7,
-    CONTROLLER_BUTTON_HOME = 8,
-    CONTROLLER_BUTTON_LPAD = 9,
-    CONTROLLER_BUTTON_RPAD = 10,
-
-    // Hat buttons
-    CONTROLLER_BUTTON_UP = 11,
-    CONTROLLER_BUTTON_DOWN = 12,
-    CONTROLLER_BUTTON_LEFT = 13,
-    CONTROLLER_BUTTON_RIGHT = 14,
-
-    // Trigger buttns
-    CONTROLLER_BUTTON_ZL = 15,
-    CONTROLLER_BUTTON_ZR = 16,
-
-    CONTROLLER_BUTTONS_COUNT,
-} ControllerButton;
-
-typedef struct {
-    struct libevdev *dev;
-    pthread_t update_thread;
-    pthread_t rumble_thread;
-    pthread_mutex_t rumble_mutex;
-    int fd;
-    int16_t rumble_effect_id;
-    int8_t player_index;
-    bool is_rumbling;
-    bool button_states[CONTROLLER_BUTTONS_COUNT];
-} Controller;
-
-typedef enum : uint8_t {
-    CONTROLLER_STICK_LEFT,
-    CONTROLLER_STICK_RIGHT
-} ControllerStick;
-
-DEFINE_ARRAY(controller, Controller, Controller *)
-
-void controller_array_destroy(ControllerArray *array) NONNULL();
-
 ControllerArray *controller_get_connected_controllers(void) RETURNS_NONNULL;
 
-void controller_start_monitor_thread(void);
+void controller_start_monitor(void);
 
-void controller_stop_monitor_thread(void);
+void controller_stop_monitor(void);
+
+#ifndef PROD
+const char *controller_get_name(const Controller *const self) NONNULL(1);
+#endif
+
+int8_t controller_get_player_index(const Controller *const self) NONNULL();
+
+void controller_set_player_index(Controller *const self,
+                                 const int8_t player_index) NONNULL(1);
 
 /**
  * Destroy a controller created by controller_from_device_path() and

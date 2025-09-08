@@ -99,8 +99,16 @@ static inline v2f v2f_mul(const v2f vec, const float value) {
     };
 }
 
+static inline v2f v2f_div(const v2f vec, const float value) {
+    return v2f_mul(vec, 1.0f / value);
+}
+
 static inline float v2f_dot(const v2f v1, const v2f v2) {
     return v1.x * v2.x + v1.y * v2.y;
+}
+
+static inline float v2f_norm(const v2f vec) {
+    return sqrtf(v2f_dot(vec, vec));
 }
 
 static inline float v2f_get_determinant(const v2f a, const v2f b, const v2f c) {

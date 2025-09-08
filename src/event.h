@@ -1,6 +1,6 @@
 #pragma once
 
-#include "controller.h"
+#include "controller_defs.h"
 
 #define CHAR_EVENT_CTRL_C 0x03
 #define CHAR_EVENT_CTRL_Z 0x1a

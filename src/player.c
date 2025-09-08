@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "controller.h"
 #include "log.h"
 #include "window.h"
 
@@ -221,9 +222,8 @@ void player_init(Player *const restrict self, const int8_t player_index,
     self->game_mode = PLAYER_DEFAULT_GAME_MODE;
 
     self->controller = controller;
-    if (controller != NULL) {
-        self->controller->player_index = self->player_index;
-    }
+    if (controller != NULL)
+        controller_set_player_index(controller, self->player_index);
 
     self->last_grounded_time_microseconds = 0;
     self->can_jump = false;
@@ -261,7 +261,7 @@ void player_init(Player *const restrict self, const int8_t player_index,
 void player_destroy(Player *const self) {
     assert(self != NULL);
     if (self->controller != NULL) {
-        self->controller->player_index = -1;
+        controller_set_player_index(self->controller, -1);
     }
     camera_destroy(self->camera);
     mesh_destroy(self->mesh);

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "command.h"
+#include "controller.h"
 #include "event_queue.h"
 #include "log.h"
 #include "player.h"
@@ -44,7 +45,7 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
     event_queue_init();
 
     game.controllers = controller_get_connected_controllers();
-    controller_start_monitor_thread();
+    controller_start_monitor();
 
     game.number_players = number_players;
     for (uint8_t i = 0; i < number_players; ++i) {
@@ -56,12 +57,12 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
 }
 
 void game_quit(void) {
-    event_queue_quit();
     for (uint8_t i = 0; i < game.number_players; ++i) {
         player_destroy(&game.players[i]);
     }
-    controller_stop_monitor_thread();
+    controller_stop_monitor();
     controller_array_destroy(game.controllers);
+    event_queue_quit();
     world_destroy(game.world);
     window_quit();
     log_debugf("quit");
@@ -131,7 +132,7 @@ static inline void game_add_player_command(void) {
 
     Controller *controller = NULL;
     for (size_t i = 0; i < game.controllers->length; ++i) {
-        if (game.controllers->array[i]->player_index == -1) {
+        if (controller_get_player_index(game.controllers->array[i]) == -1) {
             controller = game.controllers->array[i];
             break;
         }
@@ -352,9 +353,9 @@ static inline void game_hanlde_controller_connect_event(
         Player *const player = &game.players[i];
         if (player->controller == NULL) {
             player->controller = controller;
-            controller->player_index = i;
+            controller_set_player_index(controller, i);
             log_debugf("assign controller '%s' to player %d",
-                       libevdev_get_name(controller->dev), i);
+                       controller_get_name(controller), i);
             break;
         }
     }
@@ -386,7 +387,8 @@ static inline void game_update(const float delta_time_seconds) {
             case EVENT_TYPE_CONTROLLER_DISCONNECT: {
                 Controller *const controller =
                     event->controller_event.controller;
-                const int8_t player_index = controller->player_index;
+                const int8_t player_index =
+                    controller_get_player_index(controller);
                 if (player_index != -1) {
                     game.players[player_index].controller = NULL;
                 }

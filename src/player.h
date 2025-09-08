@@ -2,7 +2,7 @@
 
 #include "camera.h"
 #include "collision.h"
-#include "controller.h"
+#include "controller_defs.h"
 #include "mesh.h"
 #include "player_game_mode.h"
 #include "vec.h"

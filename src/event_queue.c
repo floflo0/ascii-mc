@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "controller.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -30,7 +31,6 @@ static bool event_queue_is_init = false;
 
 void event_queue_init(void) {
     assert(!event_queue_is_init);
-    event_queue.first = NULL;
     event_queue.last = event_queue.first;
 #ifndef NDEBUG
     event_queue_is_init = true;
@@ -42,6 +42,10 @@ void event_queue_quit(void) {
     while (event_queue.first != NULL) {
         EventQueueNode *const first = event_queue.first;
         event_queue.first = event_queue.first->next;
+        if (first->event.type == EVENT_TYPE_CONTROLLER_CONNECT ||
+            first->event.type == EVENT_TYPE_CONTROLLER_DISCONNECT) {
+            controller_destroy(first->event.controller_event.controller);
+        }
         free(first);
     }
 #ifndef NDEBUG

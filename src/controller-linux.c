@@ -1,20 +1,16 @@
-#include "controller.h"
-
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libevdev/libevdev.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <systemd/sd-device.h>
 #include <unistd.h>
 
+#include "config.h"
+#include "controller.h"
 #include "event_queue.h"
 // #define LOG_LEVEL_ERROR
 #include "log.h"
@@ -23,7 +19,6 @@
 
 #define CONTROLLER_AXIS_MAX 32767
 #define CONTROLLER_AXIS_MIN -32768
-#define CONTROLLER_AXIS_ROUND 0.01f
 #define CONTROLLER_RUMBLE_DURATION 500  // ms
 
 #define DEVICE_PATH_SIZE 27
@@ -42,18 +37,19 @@
     BUTTON(CONTROLLER_BUTTON_LPAD, BTN_THUMBL)  \
     BUTTON(CONTROLLER_BUTTON_RPAD, BTN_THUMBR)
 
+struct _Controller {
+    struct libevdev *dev;
+    pthread_t update_thread;
+    pthread_t rumble_thread;
+    pthread_mutex_t rumble_mutex;
+    int fd;
+    int16_t rumble_effect_id;
+    int8_t player_index;
+    bool is_rumbling;
+    bool button_states[CONTROLLER_BUTTONS_COUNT];
+};
+
 static pthread_t monitor_thread;
-
-ARRAY_IMPLEMENTATION(controller, Controller, Controller *)
-
-void controller_array_destroy(ControllerArray *const array) {
-    assert(array != NULL);
-    for (size_t i = 0; i < array->length; ++i) {
-        assert(array->array[i] != NULL);
-        controller_destroy(array->array[i]);
-    }
-    array_destroy((Array *)array);
-}
 
 /**
  * Check if a device has the required events to be a controller.
@@ -167,6 +163,7 @@ static void controller_push_button_event(const Controller *const self,
     assert(self != NULL);
     assert(event_type == EVENT_TYPE_BUTTON_DOWN ||
            event_type == EVENT_TYPE_BUTTON_UP);
+    assert(button < CONTROLLER_BUTTONS_COUNT);
 
     if (self->player_index == -1) return;
 
@@ -187,6 +184,7 @@ static void controller_handle_button_down(Controller *const self,
 static void controller_handle_button_down(Controller *const self,
                                           const ControllerButton button) {
     assert(self != NULL);
+    assert(button < CONTROLLER_BUTTONS_COUNT);
     self->button_states[button] = true;
     controller_push_button_event(self, EVENT_TYPE_BUTTON_DOWN, button);
 }
@@ -198,6 +196,7 @@ static void controller_handle_button_up(Controller *const self,
 static void controller_handle_button_up(Controller *const self,
                                         const ControllerButton button) {
     assert(self != NULL);
+    assert(button < CONTROLLER_BUTTONS_COUNT);
     self->button_states[button] = false;
     controller_push_button_event(self, EVENT_TYPE_BUTTON_UP, button);
 }
@@ -228,6 +227,8 @@ static void controller_handle_hat_event(
     const ControllerButton button_negative) {
     assert(self != NULL);
     assert(event != NULL);
+    assert(button_positive < CONTROLLER_BUTTONS_COUNT);
+    assert(button_negative < CONTROLLER_BUTTONS_COUNT);
 
     if (event->value == 1) {
         if (self->button_states[button_negative]) {
@@ -581,13 +582,13 @@ ControllerArray *controller_get_connected_controllers(void) {
     return array;
 }
 
-int handle_new_device(sd_device_monitor *const restrict _monitor,
-                      sd_device *const restrict device,
-                      void *const restrict _userdata) NONNULL(2);
+static int handle_new_device(sd_device_monitor *const restrict _monitor,
+                             sd_device *const restrict device,
+                             void *const restrict _userdata) NONNULL(2);
 
-int handle_new_device(sd_device_monitor *const restrict _monitor,
-                      sd_device *const restrict device,
-                      void *const restrict _data) {
+static int handle_new_device(sd_device_monitor *const restrict _monitor,
+                             sd_device *const restrict device,
+                             void *const restrict _data) {
     (void)_monitor;
     (void)_data;
     assert(device != NULL);
@@ -689,7 +690,7 @@ static void *controller_monitor_thread(void *const _data) {
     return NULL;
 }
 
-void controller_start_monitor_thread(void) {
+void controller_start_monitor(void) {
     const int return_code =
         pthread_create(&monitor_thread, NULL, controller_monitor_thread, NULL);
     if (return_code < 0) {
@@ -699,7 +700,7 @@ void controller_start_monitor_thread(void) {
     }
 }
 
-void controller_stop_monitor_thread(void) {
+void controller_stop_monitor(void) {
     int return_code;
     return_code = pthread_cancel(monitor_thread);
     if (return_code < 0) {
@@ -727,6 +728,24 @@ static void controller_stop_rumble_thread(Controller *const self) {
         log_errorf("failed to cancel rumble thread for controller '%s': %s",
                    libevdev_get_name(self->dev), strerror(errno));
     }
+}
+
+#ifndef PROD
+const char *controller_get_name(const Controller *const self) {
+    assert(self != NULL);
+    return libevdev_get_name(self->dev);
+}
+#endif
+
+int8_t controller_get_player_index(const Controller *const self) {
+    assert(self != NULL);
+    return self->player_index;
+}
+
+void controller_set_player_index(Controller *const self,
+                                 const int8_t player_index) {
+    assert(self != NULL);
+    self->player_index = player_index;
 }
 
 void controller_destroy(Controller *const self) {
@@ -803,12 +822,18 @@ v2f controller_get_stick(const Controller *const self,
         stick_state.y = -1.0f;
     }
 
+    const float stick_state_norm = v2f_norm(stick_state);
+    if (stick_state_norm > 1.0f) {
+        stick_state = v2f_div(stick_state, stick_state_norm);
+    }
+
     return stick_state;
 }
 
 inline bool controller_get_button(const Controller *const self,
                                   const ControllerButton button) {
     assert(self != NULL);
+    assert(button < CONTROLLER_BUTTONS_COUNT);
     return self->button_states[button];
 }
 

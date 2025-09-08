@@ -47,13 +47,19 @@ void *_realloc_or_exit(location_param void *restrict pointer, const size_t size,
 
 uint64_t get_time_miliseconds(void) {
     struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) < 0) {
+        log_errorf_errno("failed to get clock time");
+        exit(EXIT_FAILURE);
+    }
     return now.tv_sec * 1000 + now.tv_nsec / 1000000;
 }
 
 uint64_t get_time_microseconds(void) {
     struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) < 0) {
+        log_errorf_errno("failed to get clock time");
+        exit(EXIT_FAILURE);
+    }
     return now.tv_sec * 1000000 + now.tv_nsec / 1000;
 }
 

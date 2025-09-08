@@ -95,9 +95,10 @@ bool parse_uint32(const char *const restrict string,
     assert(string != NULL);
     assert(value != NULL);
     char *end_pointer;
-    const long value_long = strtol(string, &end_pointer, 10);
+    const long long value_long = strtoll(string, &end_pointer, 10);
     assert(end_pointer != NULL);
-    if (*end_pointer != '\0' || value_long > UINT32_MAX || value_long < 0) {
+    if (*end_pointer != '\0' || value_long > (long long)UINT32_MAX ||
+        value_long < 0) {
         return false;
     }
     *value = value_long;

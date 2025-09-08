@@ -203,11 +203,13 @@ static inline void game_handle_char_event(const CharEvent *const char_event)
 
 static inline void game_handle_char_event(const CharEvent *const char_event) {
     assert(char_event != NULL);
+#ifndef __wasm__
     if (char_event->chr == CHAR_EVENT_CTRL_Z) {
         log_debugf("suspending");
         raise(SIGTSTP);
         return;
     }
+#endif
 
     if (game.command_mode) {
         if (char_event->chr == CHAR_EVENT_KEY_ESCAPE ||
@@ -555,6 +557,7 @@ static void *game_player_render_thread(void *const data) {
     return NULL;
 }
 
+#ifndef __wasm__
 static inline void game_render_multiplayer(void) {
     pthread_t render_threads[game.number_players - 1];
     for (int8_t i = 1; i < game.number_players; ++i) {
@@ -579,6 +582,13 @@ static inline void game_render_multiplayer(void) {
         }
     }
 }
+#else
+static inline void game_render_multiplayer(void) {
+    for (int8_t i = 1; i < game.number_players; ++i) {
+        game_player_render_thread(&game.players[i]);
+    }
+}
+#endif
 
 static inline void game_render(const float delta_time_seconds) {
     assert(delta_time_seconds >= 0.0f);

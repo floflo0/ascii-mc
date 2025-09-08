@@ -14,29 +14,32 @@
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
 
-typedef int VertexIndices[CHUNK_SIZE + 1][CHUNK_HEIGHT + 1][CHUNK_SIZE + 1];
+#define vertex_indices_index(x, y, z)                                         \
+    ((x) * ((CHUNK_HEIGHT + 1) * (CHUNK_SIZE + 1)) + (y) * (CHUNK_SIZE + 1) + \
+     (z))
 
 static int chunk_get_vertex_index(const Chunk *const restrict self,
                                   const Mesh *const restrict mesh,
-                                  VertexIndices vertex_indices, const uint8_t x,
-                                  const uint8_t y, const uint8_t z)
-    NONNULL(1, 2, 3);
+                                  int *const restrict vertex_indices,
+                                  const uint8_t x, const uint8_t y,
+                                  const uint8_t z) NONNULL(1, 2, 3);
 
 static int chunk_get_vertex_index(const Chunk *const restrict self,
                                   const Mesh *const restrict mesh,
-                                  VertexIndices vertex_indices, const uint8_t x,
+                                  int *vertex_indices, const uint8_t x,
                                   const uint8_t y, const uint8_t z) {
     assert(self != NULL);
     assert(mesh != NULL);
     assert(vertex_indices != NULL);
 
-    if (vertex_indices[x][y][z] != -1) return vertex_indices[x][y][z];
+    if (vertex_indices[vertex_indices_index(x, y, z)] != -1)
+        return vertex_indices[vertex_indices_index(x, y, z)];
 
     const size_t i = v3f_array_grow(mesh->vertices);
     mesh->vertices->array[i].x = self->x * CHUNK_SIZE + x;
     mesh->vertices->array[i].y = y;
     mesh->vertices->array[i].z = self->z * CHUNK_SIZE + z;
-    vertex_indices[x][y][z] = i;
+    vertex_indices[vertex_indices_index(x, y, z)] = i;
     return i;
 }
 
@@ -98,11 +101,20 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
 
     Mesh *const mesh = mesh_create(1024, 1024);
 
-    VertexIndices vertex_indices;
+#ifndef __wasm__
+    int vertex_indices[(CHUNK_SIZE + 1) * (CHUNK_HEIGHT + 1) *
+                       (CHUNK_SIZE + 1)];
+#else
+    int *const vertex_indices =
+        malloc_or_exit(sizeof(*vertex_indices) * (CHUNK_SIZE + 1) *
+                           (CHUNK_HEIGHT + 1) * (CHUNK_SIZE + 1),
+                       "failed to generate chunk mesh");
+#endif
+
     for (int x = 0; x <= CHUNK_SIZE; ++x) {
         for (int y = 0; y <= CHUNK_HEIGHT; ++y) {
             for (int z = 0; z <= CHUNK_SIZE; ++z) {
-                vertex_indices[x][y][z] = -1;
+                vertex_indices[vertex_indices_index(x, y, z)] = -1;
             }
         }
     }
@@ -543,6 +555,10 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
         }
     }
 
+#ifdef __wasm__
+    free(vertex_indices);
+#endif
+
     log_debugf("generated mesh for chunk (%d, %d) in %f ms", self->x, self->z,
                (get_time_microseconds() - start) / 1000.0f);
 
@@ -560,7 +576,9 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
     self->x = x;
     self->z = z;
 
+#ifndef __wasm__
     pthread_mutex_init(&self->mesh_mutex, NULL);
+#endif
 
     for (uint8_t i = 0; i < 4; ++i) {
         self->loaded_by[i] = false;
@@ -661,7 +679,9 @@ static void chunk_destroy(Chunk *const self) NONNULL();
 
 static void chunk_destroy(Chunk *const self) {
     assert(self != NULL);
+#ifndef __wasm__
     mutex_destroy(&self->mesh_mutex);
+#endif
     if (self->mesh != NULL) {
         mesh_destroy(self->mesh);
     }
@@ -805,6 +825,8 @@ void world_update_loaded_chunks(World *const self, const v2i old_chunk_position,
     }
 }
 
+// #ifndef __wasm__
+#if 0
 #ifndef WORLD_RENDER_SCHEDULER_DYNAMIC
 typedef struct {
     const World *self;
@@ -961,9 +983,9 @@ static void *world_render_thread(void *const data) {
     return NULL;
 }
 
-void world_render(const World *const restrict self,
-                  const Camera *const restrict camera,
-                  const Viewport *const restrict viewport) {
+void world_render(const world *const restrict self,
+                  const camera *const restrict camera,
+                  const viewport *const restrict viewport) {
     assert(self != NULL);
     assert(camera != NULL);
     assert(viewport != NULL);
@@ -1017,6 +1039,35 @@ void world_render(const World *const restrict self,
     }
 
     mutex_destroy(&render_context.mutex);
+}
+#endif
+#else
+void world_render(const World *const restrict self,
+                  const Camera *const restrict camera,
+                  const Viewport *const restrict viewport) {
+    assert(self != NULL);
+    assert(camera != NULL);
+    assert(viewport != NULL);
+
+    const v2i camera_chunk_position =
+        world_position_to_chunk_coordinate(camera->position);
+
+    const int min_x =
+        max_int(0, camera_chunk_position.x - WORLD_RENDER_DISTANCE);
+    const int max_x = min_int(
+        camera_chunk_position.x + WORLD_RENDER_DISTANCE + 1, WORLD_SIZE);
+    const int min_z =
+        max_int(0, camera_chunk_position.y - WORLD_RENDER_DISTANCE);
+    const int max_z = min_int(
+        camera_chunk_position.y + WORLD_RENDER_DISTANCE + 1, WORLD_SIZE);
+
+    for (int z = min_z; z < max_z; ++z) {
+        for (int x = min_x; x < max_x; ++x) {
+            Chunk *const chunk = self->chunks[x][z];
+            assert(chunk != NULL);
+            chunk_render(chunk, camera, self, viewport);
+        }
+    }
 }
 #endif
 

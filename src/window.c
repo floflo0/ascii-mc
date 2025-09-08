@@ -2,7 +2,9 @@
 
 #include <assert.h>
 #include <float.h>
+#ifndef __wasm__
 #include <signal.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +19,7 @@
 #include "texture.h"
 #include "threads.h"
 #include "utils.h"
+#include "wasm/js.h"
 
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
@@ -54,6 +57,7 @@ Window window = {
 #endif
 };
 
+#ifndef __wasm__
 static void window_restore_terminal_attr(void) {
     assert(window.is_init);
     if (tcsetattr(WINDOW_FD, TCSANOW, &window.old_attr)) {
@@ -61,6 +65,9 @@ static void window_restore_terminal_attr(void) {
         exit(EXIT_FAILURE);
     }
 }
+#else
+#define window_restore_terminal_attr()
+#endif
 
 static void get_terminal_size(int *const restrict width,
                               int *const restrict height) NONNULL();
@@ -100,11 +107,13 @@ static void window_reset_text_style(void) {
     }
 }
 
+#ifndef __wasm__
 static void handle_sigcont(const int _sig) {
     (void)_sig;
     log_debugf("SIGCONT received");
     window_show_cursor();
 }
+#endif
 
 static bool is_run_in_tty(void) {
     const char *const tty_name = ttyname(WINDOW_FD);
@@ -121,8 +130,6 @@ static bool is_run_in_tty(void) {
     return true;
 }
 
-#define BOOL_TO_STR(value) ((value) ? "true" : "false")
-
 void window_init(const bool force_tty, const bool force_no_tty) {
     assert(!window.is_init);
 
@@ -138,6 +145,7 @@ void window_init(const bool force_tty, const bool force_no_tty) {
     }
 
     get_terminal_size(&window.width, &window.height);
+    log_debugf("window size: (%d, %d)", window.width, window.height);
 
     const size_t window_size = window.width * window.height;
     window.pixels = malloc_or_exit(sizeof(*window.pixels) * window_size,
@@ -153,6 +161,7 @@ void window_init(const bool force_tty, const bool force_no_tty) {
         exit(EXIT_FAILURE);
     }
 
+#ifndef __wasm__
     if (tcgetattr(WINDOW_FD, &window.old_attr)) {
         log_errorf_errno(TCGETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
@@ -171,13 +180,16 @@ void window_init(const bool force_tty, const bool force_no_tty) {
         log_errorf_errno(TCSETATTR_FAILED_MESSAGE);
         exit(EXIT_FAILURE);
     }
+#endif
 
     window_hide_cursor();
 
+#ifndef __wasm__
     if (signal(SIGCONT, handle_sigcont) == SIG_ERR) {
         log_errorf_errno("failed to setup SIGCONT handler");
         exit(EXIT_FAILURE);
     }
+#endif
 
     window.cursor_position.x = 0;
     window.cursor_position.y = 0;
@@ -199,10 +211,12 @@ void window_quit(void) {
         exit(EXIT_FAILURE);
     }
 
+#ifndef __wasm__
     const size_t window_size = window.width * window.height;
     for (size_t i = 0; i < window_size; ++i) {
         mutex_destroy(&window.pixels[i].mutex);
     }
+#endif
     free(window.pixels);
     free(window.display_buffer);
 #ifndef NDEBUG
@@ -217,17 +231,21 @@ static inline void window_detect_resize(void) {
     if (window.width != width || window.height != height) {
         log_debugf("resize window from (%d, %d) to (%d, %d)", window.width,
                    window.height, width, height);
+#ifndef __wasm__
         const size_t old_window_size = window.width * window.height;
         for (size_t i = 0; i < old_window_size; ++i) {
             mutex_destroy(&window.pixels[i].mutex);
         }
+#endif
         const size_t new_window_size = width * height;
         window.pixels = realloc_or_exit(
             window.pixels, sizeof(*window.pixels) * new_window_size,
             "failed to resize window pixels buffer");
+#ifndef __wasm__
         for (size_t i = 0; i < new_window_size; ++i) {
             pthread_mutex_init(&window.pixels[i].mutex, NULL);
         }
+#endif
         window.display_buffer = realloc_or_exit(
             window.display_buffer,
             DISPLAY_BUFFER_SIZE(
@@ -263,6 +281,9 @@ static inline void handle_keyboard_input(void) {
 
 void window_update(void) {
     assert(window.is_init);
+#ifdef __wasm__
+    JS_wait_for_next_frame();
+#endif
     window_detect_resize();
     handle_keyboard_input();
 }

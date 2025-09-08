@@ -1,9 +1,11 @@
 #pragma once
 
 #include <assert.h>
-#include <pthread.h>
 #include <stdbool.h>
+#ifndef __wasm__
+#include <pthread.h>
 #include <termios.h>
+#endif
 
 #include "color.h"
 #include "triangle.h"
@@ -11,7 +13,9 @@
 #define WINDOW_Z_BUFFER_FRONT -1.0f
 
 typedef struct {
+#ifndef __wasm__
     pthread_mutex_t mutex;
+#endif
     float z;
     char chr;
     Color color;
@@ -22,7 +26,9 @@ typedef struct {
     Pixel *pixels;
     char *display_buffer;
     v2i cursor_position;
+#ifndef __wasm__
     struct termios old_attr;
+#endif
     bool show_cursor;
     bool is_run_in_tty;
 #ifndef NDEBUG

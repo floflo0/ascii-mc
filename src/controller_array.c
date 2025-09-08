@@ -7,8 +7,9 @@ ARRAY_IMPLEMENTATION(controller, Controller, Controller *)
 void controller_array_destroy(ControllerArray *const array) {
     assert(array != NULL);
     for (size_t i = 0; i < array->length; ++i) {
-        assert(array->array[i] != NULL);
-        controller_destroy(array->array[i]);
+        Controller *const controller = array->array[i];
+        assert(controller != NULL);
+        controller_destroy(controller);
     }
     array_destroy((Array *)array);
 }

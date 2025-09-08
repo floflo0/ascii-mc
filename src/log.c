@@ -7,7 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __wasm__
 #define DEBUG_OUT stderr
+#else
+#define DEBUG_OUT stdout
+#endif
 
 static char *program_name = NULL;
 

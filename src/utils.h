@@ -8,6 +8,8 @@
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #define RETURNS_NONNULL __attribute__((returns_nonnull))
 
+#define BOOL_TO_STR(value) ((value) ? "true" : "false")
+
 #define RAD(angle) (2.0f * M_PI * angle / 360.0f)
 #define DEG(angle) (360.0f * angle / (2.0f * M_PI))
 

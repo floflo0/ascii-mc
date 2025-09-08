@@ -5,7 +5,7 @@
 
 #include "utils.h"
 
-Color texture_get(const Texture *const texture, const float u, const  float v) {
+Color texture_get(const Texture *const texture, const float u, const float v) {
     assert(texture != NULL);
 
     const int texture_x = clamp_int(u * TEXTURE_SIZE, 0, TEXTURE_SIZE - 1);

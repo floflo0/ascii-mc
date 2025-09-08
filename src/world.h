@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef __wasm__
 #include <pthread.h>
+#endif
 
 #include "block.h"
 #include "camera.h"
@@ -11,7 +13,9 @@
 typedef struct {
     int x, z;
     Mesh *mesh;
+#ifndef __wasm__
     pthread_mutex_t mesh_mutex;
+#endif
     bool loaded_by[4];
     Block blocks[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];  // blocks[x][y][z]
 } Chunk;

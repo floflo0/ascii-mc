@@ -16,13 +16,17 @@ typedef struct EventQueueNode {
 typedef struct {
     EventQueueNode *first;
     EventQueueNode *last;
+#ifndef __wasm__
     pthread_mutex_t mutex;
+#endif
 } EventQueue;
 
 static EventQueue event_queue = {
     .first = NULL,
     .last = NULL,
+#ifndef __wasm__
     .mutex = PTHREAD_MUTEX_INITIALIZER,
+#endif
 };
 
 #ifndef NDEBUG

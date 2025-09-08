@@ -9,6 +9,14 @@
 #define STRTOK_TOKEN_CAPACITY 1024
 #define ERRNO_MAX EHWPOISON
 
+void *memset(void *s, const int c, const size_t n) {
+    assert(s != NULL);
+    void *const original_pointer = s;
+    void *const end_pointer = s + n;
+    while (s < end_pointer) *(char *)s++ = c;
+    return original_pointer;
+}
+
 size_t strlen(const char *s) {
     assert(s != NULL);
     size_t size = 0;

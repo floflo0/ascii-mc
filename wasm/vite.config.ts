@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
-    if (mode === 'dev') {
+    if (mode === 'production') {
         return {
             esbuild: {
                 drop: ['console'],
             },
+            base: '/ascii-mc',
         };
     }
 

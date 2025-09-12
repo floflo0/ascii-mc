@@ -8,6 +8,15 @@ A simple Minecraft clone that render in ASCII characters in the terminal.
 - Runs even in a TTY
 - Explore a nearly infinite world with plains, mountains, and deserts
 - Place and break blocks in the environment
+- Demo in web browser: <https://floflo0.github.io/ascii-mc/>
+
+## Web browser Demo
+
+The game can be compile to WebAssembly in order to run in web browser. However,
+this version of the game is very slow and if you really want to test the game
+properly, I really encourage you to test the native version.
+
+The game is available here: <https://floflo0.github.io/ascii-mc/>
 
 ## Build
 
@@ -22,6 +31,15 @@ Then, to build the project in release mode:
 
 ```sh
 make BUILD_TYPE=release
+```
+
+#### WebAssembly
+
+```sh
+make wasm BUILD_TYPE=release
+cd wasm
+npm install
+npm run build
 ```
 
 ## Usage

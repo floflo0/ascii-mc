@@ -10,9 +10,14 @@ typedef struct {
     TriangleIndexArray *triangles;
 } Mesh;
 
+[[gnu::returns_nonnull]]
 Mesh *mesh_create(const size_t preallocate_vertices_size,
-                  const size_t preallocate_triangles_size) RETURNS_NONNULL;
-void mesh_destroy(Mesh *const mesh) NONNULL();
+                  const size_t preallocate_triangles_size);
+
+[[gnu::nonnull]]
+void mesh_destroy(Mesh *const mesh);
+
+[[gnu::nonnull]]
 void mesh_render(const Mesh *const restrict self,
                  const Camera *const restrict camera,
-                 const Viewport *const restrict viewport) NONNULL();
+                 const Viewport *const restrict viewport);

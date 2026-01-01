@@ -18,12 +18,7 @@
     ((x) * ((CHUNK_HEIGHT + 1) * (CHUNK_SIZE + 1)) + (y) * (CHUNK_SIZE + 1) + \
      (z))
 
-static int chunk_get_vertex_index(const Chunk *const restrict self,
-                                  const Mesh *const restrict mesh,
-                                  int *const restrict vertex_indices,
-                                  const uint8_t x, const uint8_t y,
-                                  const uint8_t z) NONNULL(1, 2, 3);
-
+[[gnu::nonnull(1, 2, 3)]]
 static int chunk_get_vertex_index(const Chunk *const restrict self,
                                   const Mesh *const restrict mesh,
                                   int *vertex_indices, const uint8_t x,
@@ -43,10 +38,7 @@ static int chunk_get_vertex_index(const Chunk *const restrict self,
     return i;
 }
 
-static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
-                                        const World *const restrict world)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                                         const World *const restrict world) {
     assert(self != NULL);
@@ -565,9 +557,7 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
     return mesh;
 }
 
-static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
-                           const int8_t player_index) RETURNS_NONNULL;
-
+[[gnu::returns_nonnull]]
 static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
                            const int8_t player_index) {
     log_debugf("load chunk (%d, %d)", x, z);
@@ -679,8 +669,7 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
     return self;
 }
 
-static void chunk_destroy(Chunk *const self) NONNULL();
-
+[[gnu::nonnull]]
 static void chunk_destroy(Chunk *const self) {
     assert(self != NULL);
 #ifndef __wasm__
@@ -692,11 +681,7 @@ static void chunk_destroy(Chunk *const self) {
     free(self);
 }
 
-static void chunk_render(Chunk *const restrict self,
-                         const Camera *const restrict camera,
-                         const World *const restrict world,
-                         const Viewport *const restrict viewport) NONNULL();
-
+[[gnu::nonnull]]
 static void chunk_render(Chunk *const restrict self,
                          const Camera *const restrict camera,
                          const World *const restrict world,
@@ -714,8 +699,7 @@ static void chunk_render(Chunk *const restrict self,
     mesh_render(self->mesh, camera, viewport);
 }
 
-static void chunk_make_mesh_dirty(Chunk *const self) NONNULL();
-
+[[gnu::nonnull]]
 static void chunk_make_mesh_dirty(Chunk *const self) {
     assert(self != NULL);
 
@@ -766,8 +750,7 @@ static v2i world_position_to_chunk_coordinate_v3i(const v3i position) {
     };
 }
 
-static inline bool chunk_need_to_be_loaded(const Chunk *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline bool chunk_need_to_be_loaded(const Chunk *const self) {
     assert(self != NULL);
     return self->loaded_by[0] || self->loaded_by[1] || self->loaded_by[2] ||
@@ -1161,12 +1144,7 @@ void world_load_chunks_around_player(World *const self,
     }
 }
 
-static void world_update_chunk_mesh_around_block(World *const restrict self,
-                                                 Chunk *const restrict chunk,
-                                                 const uint8_t x_index,
-                                                 const uint8_t z_index)
-    NONNULL(1, 2);
-
+[[gnu::nonnull(1, 2)]]
 static void world_update_chunk_mesh_around_block(World *const restrict self,
                                                  Chunk *const restrict chunk,
                                                  const uint8_t x_index,

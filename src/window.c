@@ -69,9 +69,7 @@ static void window_restore_terminal_attr(void) {
 #define window_restore_terminal_attr()
 #endif
 
-static void get_terminal_size(int *const restrict width,
-                              int *const restrict height) NONNULL();
-
+[[gnu::nonnull]]
 static void get_terminal_size(int *const restrict width,
                               int *const restrict height) {
     assert(width != NULL);
@@ -108,8 +106,7 @@ static void window_reset_text_style(void) {
 }
 
 #ifndef __wasm__
-static void handle_sigcont(const int _sig) {
-    (void)_sig;
+static void handle_sigcont([[gnu::unused]] const int _sig) {
     log_debugf("SIGCONT received");
     window_show_cursor();
 }
@@ -482,9 +479,7 @@ static bool edge_is_top_left(const v2f v1, const v2f v2) {
     return edge.y < 0.0f || (edge.y == 0.0f && edge.x > 0.0f);
 }
 
-static void window_render_triangle_fill(const Triangle3D *const triangle)
-    NONNULL();
-
+[[gnu::nonnull]]
 static void window_render_triangle_fill(const Triangle3D *const triangle) {
     assert(window.is_init);
     assert(triangle != NULL);

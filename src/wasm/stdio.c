@@ -15,8 +15,6 @@
 
 #include "js.h"
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-
 #define DEFAULT_DOUBLE_DECIMAL_PART_MAX_LENGTH 7
 #define DOUBLE_MAX_DECIMAL_PART_LENGTH 10
 
@@ -329,8 +327,7 @@ int printf(const char *restrict format, ...) {
     return return_value;
 }
 
-static void file_flush(FILE *self) NONNULL(1);
-
+[[gnu::nonnull]]
 static void file_flush(FILE *self) {
     assert(self != NULL);
     if (self->fd == STDOUT_FILENO) {

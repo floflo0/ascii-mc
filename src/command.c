@@ -30,9 +30,7 @@ static size_t command_buffer_length = 0;
 static bool error_message = false;
 static char error_message_string[ERROR_MESSAGE_CAPACITY];
 
-static inline void set_error_message(const char *const new_error_message)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline void set_error_message(const char *const new_error_message) {
     assert(new_error_message != NULL);
 
@@ -41,10 +39,7 @@ static inline void set_error_message(const char *const new_error_message) {
                 ERROR_MESSAGE_CAPACITY);
 }
 
-static inline void set_error_message_format(
-    const char *const error_message_format, ...) NONNULL(1)
-    __attribute__((format(printf, 1, 2)));
-
+[[gnu::nonnull(1)]] [[gnu::format(printf, 1, 2)]]
 static inline void set_error_message_format(
     const char *const error_message_format, ...) {
     assert(error_message_format != NULL);
@@ -78,8 +73,7 @@ void command_erase_char(void) {
     command_buffer[command_buffer_length] = '\0';
 }
 
-static bool parse_game_mode_command(Command *const command) NONNULL();
-
+[[gnu::nonnull]]
 static bool parse_game_mode_command(Command *const command) {
     const char *const game_mode_argument = strtok(NULL, " ");
     if (game_mode_argument == NULL) {
@@ -111,8 +105,7 @@ static bool parse_game_mode_command(Command *const command) {
     return true;
 }
 
-static bool parse_tp_command(Command *const command) NONNULL();
-
+[[gnu::nonnull]]
 static bool parse_tp_command(Command *const command) {
     assert(command != NULL);
     // int player_index;

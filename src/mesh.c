@@ -34,10 +34,7 @@ void mesh_destroy(Mesh *const self) {
     free(self);
 }
 
-static inline v3f *mesh_get_viewed_vertices(const Mesh *const restrict self,
-                                            const Camera *const restrict camera)
-    NONNULL() RETURNS_NONNULL;
-
+[[gnu::nonnull]] [[gnu::returns_nonnull]]
 static inline v3f *mesh_get_viewed_vertices(
     const Mesh *const restrict self, const Camera *const restrict camera) {
     assert(self != NULL);
@@ -57,9 +54,7 @@ static inline v3f *mesh_get_viewed_vertices(
     return view_vertices;
 }
 
-static v4f plane_intersect(const Plane *const plane, const v4f v1, const v4f v2)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static v4f plane_intersect(const Plane *const plane, const v4f v1,
                            const v4f v2) {
     assert(plane != NULL);
@@ -79,12 +74,7 @@ static float get_interpolation(const v3f v1, const v3f v2, const v3f v3) {
     return v3f_dot(v3f_sub(v2, v1), v3_sub_v1) / v3f_norm_squared(v3_sub_v1);
 }
 
-static void planes_clip_triangle(const Plane planes[6],
-                                 const uint8_t plane_index,
-                                 Triangle3D *const restrict triangle,
-                                 Triangle3DArray *const restrict array)
-    NONNULL(1, 3, 4);
-
+[[gnu::nonnull(1, 3, 4)]]
 static void planes_clip_triangle(const Plane planes[6],
                                  const uint8_t plane_index,
                                  Triangle3D *const restrict triangle,
@@ -292,11 +282,7 @@ static void planes_clip_triangle(const Plane planes[6],
     triangle3D_destroy(triangle);
 }
 
-static inline void clip_triangle(const Camera *const restrict camera,
-                                 Triangle3D *const restrict triangle,
-                                 Triangle3DArray *const restrict array)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline void clip_triangle(const Camera *const restrict camera,
                                  Triangle3D *const restrict triangle,
                                  Triangle3DArray *const restrict array) {
@@ -328,10 +314,7 @@ static inline void clip_triangle(const Camera *const restrict camera,
     planes_clip_triangle(planes, 0, triangle, array);
 }
 
-static inline Triangle3DArray *mesh_get_viewed_triangles(
-    const Mesh *const restrict self, const Camera *const restrict camera)
-    NONNULL() RETURNS_NONNULL;
-
+[[gnu::nonnull]] [[gnu::returns_nonnull]]
 static inline Triangle3DArray *mesh_get_viewed_triangles(
     const Mesh *const restrict self, const Camera *const restrict camera) {
     assert(self != NULL);

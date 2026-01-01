@@ -15,8 +15,7 @@
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
 
-static inline void player_generate_mesh(Player *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline void player_generate_mesh(Player *const self) {
     assert(self != NULL);
 
@@ -267,8 +266,7 @@ void player_destroy(Player *const self) {
     mesh_destroy(self->mesh);
 }
 
-static void player_damage(Player *const self, const int damage) NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void player_damage(Player *const self, const int damage) {
     assert(self != NULL);
     assert(damage > 0);
@@ -283,9 +281,7 @@ static void player_damage(Player *const self, const int damage) {
     }
 }
 
-static void player_move(Player *const restrict self, const v3f velocity,
-                        const World *const restrict world) NONNULL(1, 3);
-
+[[gnu::nonnull(1, 3)]]
 static void player_move(Player *const restrict self, const v3f velocity,
                         const World *const restrict world) {
     assert(self != NULL);
@@ -422,10 +418,7 @@ static void player_move(Player *const restrict self, const v3f velocity,
     }
 }
 
-static inline bool player_is_grounded(const Player *const restrict self,
-                                      const World *const restrict world)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline bool player_is_grounded(const Player *const restrict self,
                                       const World *const restrict world) {
     assert(self != NULL);
@@ -452,8 +445,7 @@ static inline bool player_is_grounded(const Player *const restrict self,
     return false;
 }
 
-static inline void player_update_mesh(Player *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline void player_update_mesh(Player *const self) {
     assert(self != NULL);
 
@@ -557,10 +549,7 @@ void player_jump(Player *const self) {
     self->can_jump = false;
 }
 
-static inline void player_render_informations(const Player *const self,
-                                              const uint8_t number_players)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static inline void player_render_informations(const Player *const self,
                                               const uint8_t number_players) {
     assert(self != NULL);
@@ -604,8 +593,7 @@ static inline void player_render_informations(const Player *const self,
                          WINDOW_Z_BUFFER_FRONT);
 }
 
-static inline void player_render_crosshair(const Player *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline void player_render_crosshair(const Player *const self) {
     assert(self != NULL);
     assert(window.is_init);
@@ -628,10 +616,7 @@ static inline void player_render_crosshair(const Player *const self) {
                      PLAYER_CROSSHAIR_COLOR, WINDOW_Z_BUFFER_FRONT);
 }
 
-static inline void player_render_targeted_block(
-    const Player *const restrict self, const World *const restrict world)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline void player_render_targeted_block(
     const Player *const restrict self, const World *const restrict world) {
     assert(self != NULL);
@@ -666,8 +651,7 @@ static inline void player_render_targeted_block(
                          WINDOW_Z_BUFFER_FRONT);
 }
 
-static inline void player_render_health(const Player *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline void player_render_health(const Player *const self) {
     assert(self != NULL);
     assert(self->health <= PLAYER_MAX_HEALTH);
@@ -804,9 +788,7 @@ bool player_get_targeted_block(const Player *const restrict self,
     return min_collision_time <= 1.0f;
 }
 
-static inline bool player_collide_block(const Player *const self,
-                                        const v3i block_position) NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static inline bool player_collide_block(const Player *const self,
                                         const v3i block_position) {
     const float player_min_x = self->position.x - PLAYER_WIDTH / 2.0f;

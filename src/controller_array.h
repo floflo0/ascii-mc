@@ -5,4 +5,5 @@
 
 DEFINE_ARRAY(controller, Controller, Controller *)
 
-void controller_array_destroy(ControllerArray *array) NONNULL();
+[[gnu::nonnull]]
+void controller_array_destroy(ControllerArray *array);

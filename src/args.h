@@ -30,8 +30,6 @@
 
 #include "args_config.h"
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-
 typedef struct {
 #define FLAG(variable_name, name, short_name, description) bool variable_name;
 #define LONG_FLAG(variable_name, name, description) bool variable_name;
@@ -51,15 +49,17 @@ typedef struct {
  *                     usage.
  * \param stream The output stream.
  */
+[[gnu::nonnull]]
 void print_usage(const char *const restrict program_name,
-                 FILE *const restrict stream) NONNULL();
+                 FILE *const restrict stream);
 
 /**
  * Print the help message for the program.
  *
  * \param program_name The name of the program being executed.
  */
-void print_help(const char *const program_name) NONNULL();
+[[gnu::nonnull]]
+void print_help(const char *const program_name);
 
 /**
  * Parse command-line arguments.
@@ -70,5 +70,6 @@ void print_help(const char *const program_name) NONNULL();
  *
  * \return true if the arguments were successfully parsed, or false on failure.
  */
+[[gnu::nonnull]]
 bool args_parse(Args *const restrict args, char *const restrict argv[],
-                const char *const restrict program_name) NONNULL();
+                const char *const restrict program_name);

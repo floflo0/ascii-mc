@@ -10,8 +10,6 @@
 #include "js.h"
 #include "wasm.h"
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-
 #define MEMORY_CHUNKS_CAPACITY 8192
 #ifndef PROD
 // #define ENABLE_MEMORY_DUMP
@@ -120,8 +118,7 @@ void *malloc(size_t size) {
     return NULL;
 }
 
-static Memory *get_memory_chunk_from_ptr(const void *const ptr) NONNULL();
-
+[[gnu::nonnull]]
 static Memory *get_memory_chunk_from_ptr(const void *const ptr) {
     assert(base != NULL);
     for (Memory *memory_chunk = base; memory_chunk != NULL;
@@ -205,13 +202,13 @@ void free(void *const ptr) {
     dump_memory_chunks();
 }
 
-char *getenv(const char *name) {
-    (void)name;
+char *getenv([[gnu::unused]] const char *name) {
     return NULL;
 }
 
+[[gnu::nonnull(1, 2)]]
 long __isoc23_strtol(const char *restrict ptr, const char **restrict endptr,
-                     int base) NONNULL(1, 2);
+                     int base);
 
 long __isoc23_strtol(const char *restrict ptr, const char **restrict endptr,
                      int base) {
@@ -254,9 +251,9 @@ return_:
     return parsed_value;
 }
 
+[[gnu::nonnull(1, 2)]]
 long long __isoc23_strtoll(const char *restrict ptr,
-                           const char **restrict endptr, int base)
-    NONNULL(1, 2);
+                           const char **restrict endptr, int base);
 
 long long __isoc23_strtoll(const char *restrict ptr,
                            const char **restrict endptr, int base) {

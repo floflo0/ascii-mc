@@ -18,8 +18,8 @@ typedef struct {
     v3f size;
 } Aabb;
 
+[[gnu::nonnull(1, 4, 5)]]
 bool aabb_collide_ray(const Aabb *const restrict aabb, const v3f ray_start,
                       const v3f ray_direction,
                       float *const restrict collision_time,
-                      CollisionAxis *const restrict collision_axis)
-    NONNULL(1, 4, 5);
+                      CollisionAxis *const restrict collision_axis);

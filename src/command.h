@@ -39,7 +39,8 @@ void command_append(const char chr);
 
 void command_erase_char(void);
 
-bool command_parse(Command *const command) NONNULL();
+[[gnu::nonnull]]
+bool command_parse(Command *const command);
 
 bool command_is_valid_char(const char chr);
 

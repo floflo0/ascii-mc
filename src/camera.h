@@ -2,8 +2,6 @@
 
 #include "vec.h"
 
-#define RETURNS_NONNULL __attribute__((returns_nonnull))
-
 typedef struct {
     v3f position;
     float yaw, pitch;
@@ -11,20 +9,24 @@ typedef struct {
     float aspect_ratio;
 } Camera;
 
+[[gnu::returns_nonnull]]
 Camera *camera_create(const v3f position, const float yaw, const float pitch,
-                      const float aspect_ratio) RETURNS_NONNULL;
+                      const float aspect_ratio);
 
-void camera_destroy(Camera *const self) NONNULL();
+[[gnu::nonnull]]
+void camera_destroy(Camera *const self);
 
-void camera_get_view_matrix(const Camera *const restrict self, m4f view_matrix)
-    NONNULL();
+[[gnu::nonnull]]
+void camera_get_view_matrix(const Camera *const restrict self, m4f view_matrix);
 
-void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix)
-    NONNULL();
+[[gnu::nonnull]]
+void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix);
 
-v3f camera_get_look_direction(const Camera *const self) NONNULL();
+[[gnu::nonnull]]
+v3f camera_get_look_direction(const Camera *const self);
 
-void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio)
-    NONNULL(1);
+[[gnu::nonnull(1)]]
+void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio);
 
-void camera_rotate(Camera *const self, const v2f rotation) NONNULL(1);
+[[gnu::nonnull(1)]]
+void camera_rotate(Camera *const self, const v2f rotation);

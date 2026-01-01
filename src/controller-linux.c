@@ -58,8 +58,7 @@ static pthread_t monitor_thread;
  *
  * \returns true if the device matchs the requirements to be a controller.
  */
-static bool is_controller(struct libevdev *const dev) NONNULL();
-
+[[gnu::nonnull]]
 static bool is_controller(struct libevdev *const dev) {
     assert(dev != NULL);
     return (libevdev_has_event_type(dev, EV_ABS) &&
@@ -88,8 +87,7 @@ static bool is_controller(struct libevdev *const dev) {
  *
  * \param self A pointer to the controller object.
  */
-static inline void controller_dump_info(const Controller *const self) NONNULL();
-
+[[gnu::nonnull]]
 static inline void controller_dump_info(const Controller *const self) {
     assert(self != NULL);
     log_debugf("controller name: '%s'", libevdev_get_name(self->dev));
@@ -110,10 +108,7 @@ static inline void controller_dump_info(const Controller *const self) {
 #endif
 
 #ifndef PROD
-static void controller_log_event(const Controller *const restrict self,
-                                 const struct input_event *const restrict event)
-    NONNULL();
-
+[[gnu::nonnull]]
 static void controller_log_event(
     const Controller *const restrict self,
     const struct input_event *const restrict event) {
@@ -152,11 +147,7 @@ static void controller_log_event(
 #define controller_log_event(_controller, _event)
 #endif
 
-static void controller_push_button_event(const Controller *const self,
-                                         const EventType event_type,
-                                         const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_push_button_event(const Controller *const self,
                                          const EventType event_type,
                                          const ControllerButton button) {
@@ -177,10 +168,7 @@ static void controller_push_button_event(const Controller *const self,
     });
 }
 
-static void controller_handle_button_down(Controller *const self,
-                                          const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_handle_button_down(Controller *const self,
                                           const ControllerButton button) {
     assert(self != NULL);
@@ -189,10 +177,7 @@ static void controller_handle_button_down(Controller *const self,
     controller_push_button_event(self, EVENT_TYPE_BUTTON_DOWN, button);
 }
 
-static void controller_handle_button_up(Controller *const self,
-                                        const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_handle_button_up(Controller *const self,
                                         const ControllerButton button) {
     assert(self != NULL);
@@ -214,12 +199,7 @@ static void controller_handle_button_up(Controller *const self,
  * \param button_negative The button associated with the negative direction of
  *                        the hat switch.
  */
-static void controller_handle_hat_event(
-    Controller *const restrict self,
-    const struct input_event *const restrict event,
-    const ControllerButton button_positive,
-    const ControllerButton button_negative) NONNULL(1, 2);
-
+[[gnu::nonnull(1, 2)]]
 static void controller_handle_hat_event(
     Controller *const restrict self,
     const struct input_event *const restrict event,
@@ -262,10 +242,7 @@ static void controller_handle_hat_event(
  * \param event A pointer to the input event structure containing the event
  *              data.
  */
-static void controller_handle_event(Controller *const restrict self,
-                                    const struct input_event *restrict event)
-    NONNULL(1, 2);
-
+[[gnu::nonnull(1, 2)]]
 static void controller_handle_event(
     Controller *const restrict self,
     const struct input_event *const restrict event) {
@@ -319,8 +296,7 @@ static void controller_handle_event(
     }
 }
 
-static void *controller_update_thread(void *const data) NONNULL();
-
+[[gnu::nonnull]]
 static void *controller_update_thread(void *const data) {
     assert(data != NULL);
     Controller *const self = (Controller *)data;
@@ -353,9 +329,7 @@ static void *controller_update_thread(void *const data) {
     return NULL;
 }
 
-static inline bool controller_upload_rumble_effect(Controller *const self)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline bool controller_upload_rumble_effect(Controller *const self) {
     assert(self != NULL);
 
@@ -391,10 +365,7 @@ static inline bool controller_upload_rumble_effect(Controller *const self) {
  *
  * \returns a pointer to the controller or NULL on failure.
  */
-static Controller *controller_from_fd_and_dev(const int fd,
-                                              struct libevdev *const dev)
-    NONNULL(2);
-
+[[gnu::nonnull(2)]]
 static Controller *controller_from_fd_and_dev(const int fd,
                                               struct libevdev *const dev) {
     assert(dev != NULL);
@@ -435,8 +406,7 @@ static Controller *controller_from_fd_and_dev(const int fd,
     return self;
 }
 
-static inline sd_device_enumerator *get_device_enumerator(void) RETURNS_NONNULL;
-
+[[gnu::returns_nonnull]]
 static inline sd_device_enumerator *get_device_enumerator(void) {
     int return_code;
     sd_device_enumerator *enumerator;
@@ -475,8 +445,7 @@ static inline sd_device_enumerator *get_device_enumerator(void) {
 }
 
 #ifndef PROD
-static void log_sd_device(sd_device *const device) NONNULL();
-
+[[gnu::nonnull]]
 static void log_sd_device(sd_device *const device) {
     log_debugf("device info:");
     const char *string;
@@ -524,8 +493,7 @@ static void log_sd_device(sd_device *const device) {
 #define log_sd_device(device)
 #endif
 
-static Controller *controller_from_devname(const char *const devname) NONNULL();
-
+[[gnu::nonnull]]
 static Controller *controller_from_devname(const char *const devname) {
     assert(devname != NULL);
 
@@ -582,15 +550,11 @@ ControllerArray *controller_get_connected_controllers(void) {
     return array;
 }
 
-static int handle_new_device(sd_device_monitor *const restrict _monitor,
-                             sd_device *const restrict device,
-                             void *const restrict _userdata) NONNULL(2);
-
-static int handle_new_device(sd_device_monitor *const restrict _monitor,
-                             sd_device *const restrict device,
-                             void *const restrict _data) {
-    (void)_monitor;
-    (void)_data;
+[[gnu::nonnull(2)]]
+static int handle_new_device(
+    [[gnu::unused]] sd_device_monitor *const restrict _monitor,
+    sd_device *const restrict device,
+    [[gnu::unused]] void *const restrict _data) {
     assert(device != NULL);
 
     int return_code;
@@ -640,19 +604,15 @@ static int handle_new_device(sd_device_monitor *const restrict _monitor,
     return 0;
 }
 
-static inline void sd_device_monitor_unref_void(
-    sd_device_monitor *const monitor) NONNULL();
-
+[[gnu::nonnull]]
 static inline void sd_device_monitor_unref_void(
     sd_device_monitor *const monitor) {
     assert(monitor != NULL);
     sd_device_monitor_unref(monitor);
 }
 
-static void *controller_monitor_thread(void *const _data) NONNULL();
-
-static void *controller_monitor_thread(void *const _data) {
-    (void)_data;
+[[gnu::nonnull]]
+static void *controller_monitor_thread([[gnu::unused]] void *const _data) {
     int return_code;
     sd_device_monitor *monitor;
     return_code = sd_device_monitor_new(&monitor);
@@ -717,8 +677,7 @@ void controller_stop_monitor(void) {
     }
 }
 
-static void controller_stop_rumble_thread(Controller *const self) NONNULL();
-
+[[gnu::nonnull]]
 static void controller_stop_rumble_thread(Controller *const self) {
     assert(self != NULL);
     assert(self->is_rumbling);
@@ -837,8 +796,7 @@ inline bool controller_get_button(const Controller *const self,
     return self->button_states[button];
 }
 
-static void controller_stop_rumble(Controller *const self) NONNULL();
-
+[[gnu::nonnull]]
 static void controller_stop_rumble(Controller *const self) {
     assert(self != NULL);
 
@@ -861,8 +819,7 @@ static void controller_stop_rumble(Controller *const self) {
     log_debugf("controller '%s' stop rumble", libevdev_get_name(self->dev));
 }
 
-static void *controller_rumble_thread(void *const data) NONNULL();
-
+[[gnu::nonnull]]
 static void *controller_rumble_thread(void *const data) {
     assert(data != NULL);
     Controller *const controller = data;

@@ -6,8 +6,6 @@
 #include "texture.h"
 #include "vec.h"
 
-#define RETURNS_NONNULL __attribute__((returns_nonnull))
-
 #define TRIANGLE_EDGE_V1_V2 0x01
 #define TRIANGLE_EDGE_V2_V3 0x02
 #define TRIANGLE_EDGE_V3_V1 0x04
@@ -40,19 +38,20 @@ typedef struct {
     uint8_t edges;
 } TriangleIndex;
 
-Triangle3D *triangle3D_init_v3f(const v3f *const restrict v1,
-                                const v3f *const restrict v2,
-                                const v3f *const restrict v3, const v2f uv1,
-                                const v2f uv2, const v2f uv3,
-                                const uint8_t edges,
-                                const Texture *const texture, const Color color)
-    NONNULL(1, 2, 3) RETURNS_NONNULL;
-Triangle3D *triangle3D_init_v4f(const v4f *const restrict v1,
-                                const v4f *const restrict v2,
-                                const v4f *const restrict v3, const v2f uv1,
-                                const v2f uv2, const v2f uv3,
-                                const uint8_t edges,
-                                const Texture *const texture, const Color color)
-    NONNULL(1, 2, 3) RETURNS_NONNULL;
-void triangle3D_destroy(Triangle3D *const triangle) NONNULL();
-v3f triangle3D_get_normal(const Triangle3D *const triangle) NONNULL();
+[[gnu::nonnull(1, 2, 3)]] [[gnu::returns_nonnull]]
+Triangle3D *triangle3D_init_v3f(
+    const v3f *const restrict v1, const v3f *const restrict v2,
+    const v3f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
+    const uint8_t edges, const Texture *const texture, const Color color);
+
+[[gnu::nonnull(1, 2, 3)]] [[gnu::returns_nonnull]]
+Triangle3D *triangle3D_init_v4f(
+    const v4f *const restrict v1, const v4f *const restrict v2,
+    const v4f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
+    const uint8_t edges, const Texture *const texture, const Color color);
+
+[[gnu::nonnull]]
+void triangle3D_destroy(Triangle3D *const triangle);
+
+[[gnu::nonnull]]
+v3f triangle3D_get_normal(const Triangle3D *const triangle);

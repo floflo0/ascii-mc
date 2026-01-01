@@ -5,8 +5,6 @@
 
 #include "utils.h"
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-
 typedef struct {
     int x, y;
 } v2i;
@@ -32,12 +30,17 @@ typedef union {
 
 typedef float m4f[16];
 
-void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output) NONNULL();
-v4f mul_m4f_v3f(const m4f mat, const v3f vec) NONNULL(1);
+[[gnu::nonnull]]
+void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output);
+[[gnu::nonnull(1)]]
+v4f mul_m4f_v3f(const m4f mat, const v3f vec);
 
-void m4f_rotation_x(m4f rotation_matrix, const float angle) NONNULL(1);
-void m4f_rotation_y(m4f rotation_matrix, const float angle) NONNULL(1);
-void m4f_rotation_z(m4f rotation_matrix, const float angle) NONNULL(1);
+[[gnu::nonnull(1)]]
+void m4f_rotation_x(m4f rotation_matrix, const float angle);
+[[gnu::nonnull(1)]]
+void m4f_rotation_y(m4f rotation_matrix, const float angle);
+[[gnu::nonnull(1)]]
+void m4f_rotation_z(m4f rotation_matrix, const float angle);
 
 static inline v2i v2i_add(const v2i v1, const v2i v2) {
     return (v2i){

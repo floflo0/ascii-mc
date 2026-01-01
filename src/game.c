@@ -68,9 +68,7 @@ void game_quit(void) {
     log_debugf("quit");
 }
 
-static inline void game_handle_button_down_event(
-    const ButtonEvent *const button_down_event) NONNULL();
-
+[[gnu::nonnull]]
 static inline void game_handle_button_down_event(
     const ButtonEvent *const button_down_event) {
     assert(button_down_event != NULL);
@@ -118,13 +116,10 @@ static inline void game_handle_button_down_event(
     }
 }
 
+[[gnu::nonnull]]
 static inline void game_handle_button_up_event(
-    const ButtonEvent *const button_up_event) NONNULL();
-
-static inline void game_handle_button_up_event(
-    const ButtonEvent *const button_up_event) {
+    [[maybe_unused]] const ButtonEvent *const button_up_event) {
     assert(button_up_event != NULL);
-    (void)button_up_event;
 }
 
 static inline void game_add_player_command(void) {
@@ -147,8 +142,7 @@ static inline void game_add_player_command(void) {
     game.number_players = new_number_players;
 }
 
-static inline void game_execute_command(const Command *const command) NONNULL();
-
+[[gnu::nonnull]]
 static inline void game_execute_command(const Command *const command) {
     assert(command != NULL);
 
@@ -198,9 +192,7 @@ static void game_quit_command_mode(void) {
     command_clear();
 }
 
-static inline void game_handle_char_event(const CharEvent *const char_event)
-    NONNULL();
-
+[[gnu::nonnull]]
 static inline void game_handle_char_event(const CharEvent *const char_event) {
     assert(char_event != NULL);
 #ifndef __wasm__
@@ -343,9 +335,7 @@ static inline void game_handle_resize_event(void) {
     }
 }
 
-static inline void game_hanlde_controller_connect_event(
-    Controller *const controller) NONNULL();
-
+[[gnu::nonnull]]
 static inline void game_hanlde_controller_connect_event(
     Controller *const controller) {
     assert(controller != NULL);
@@ -541,8 +531,7 @@ static inline void game_render_ui(const float delta_time_seconds) {
     if (game.command_mode) command_render();
 }
 
-static void *game_player_render_thread(void *const data) NONNULL();
-
+[[gnu::nonnull]]
 static void *game_player_render_thread(void *const data) {
     assert(data != NULL);
     const Player *const player = data;

@@ -47,10 +47,12 @@ void window_flush(void);
 void window_render_rectangle(const v2i position, const v2i size, const char chr,
                              const Color color, const float z);
 
-void window_render_triangle(const Triangle3D *const triangle) NONNULL();
+[[gnu::nonnull]]
+void window_render_triangle(const Triangle3D *const triangle);
 
+[[gnu::nonnull(2)]]
 void window_render_string(const v2i position, const char *const string,
-                          const Color color, const float z) NONNULL(2);
+                          const Color color, const float z);
 
 static inline void window_set_pixel(const int pixel_index, const char chr,
                                     const Color color, const float z) {

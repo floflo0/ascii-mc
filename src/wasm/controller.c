@@ -49,11 +49,7 @@ static JS_GamepadArray gamepads_array = JS_NULL;
 static IntArray *gamepad_indexes_array = NULL;
 static int monitor_gamepads_request_id = -1;
 
-static void controller_push_button_event(const Controller *const self,
-                                         const EventType event_type,
-                                         const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_push_button_event(const Controller *const self,
                                          const EventType event_type,
                                          const ControllerButton button) {
@@ -74,10 +70,7 @@ static void controller_push_button_event(const Controller *const self,
     });
 }
 
-static void controller_handle_button_down(Controller *const self,
-                                          const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_handle_button_down(Controller *const self,
                                           const ControllerButton button) {
     assert(self != NULL);
@@ -86,10 +79,7 @@ static void controller_handle_button_down(Controller *const self,
     controller_push_button_event(self, EVENT_TYPE_BUTTON_DOWN, button);
 }
 
-static void controller_handle_button_up(Controller *const self,
-                                        const ControllerButton button)
-    NONNULL(1);
-
+[[gnu::nonnull(1)]]
 static void controller_handle_button_up(Controller *const self,
                                         const ControllerButton button) {
     assert(self != NULL);
@@ -170,8 +160,7 @@ static void controller_update(void *const data) {
         JS_requestAnimationFrame_data(controller_update, data);
 }
 
-static Controller *controller_create(const JS_Gamepad gamepad) RETURNS_NONNULL;
-
+[[gnu::returns_nonnull]]
 static Controller *controller_create(const JS_Gamepad gamepad) {
     Controller *const self =
         malloc_or_exit(sizeof(*self), "failed to create controller");
@@ -358,8 +347,7 @@ bool controller_get_button(const Controller *const self,
 }
 
 // TODO: controller_rumble implementation
-bool controller_rumble(Controller *const self) {
+bool controller_rumble([[maybe_unused]] Controller *const self) {
     assert(self != NULL);
-    (void)self;
     return true;
 }

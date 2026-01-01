@@ -13,8 +13,7 @@
 #define VERSION "0.0.0"
 #endif
 
-int main(const int argc, char *argv[]) {
-    (void)argc;
+int main([[maybe_unused]] const int argc, char *argv[]) {
     assert(argc > 0);
 
     const char *const program_name = basename(*argv++);

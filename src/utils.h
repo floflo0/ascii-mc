@@ -5,9 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-#define RETURNS_NONNULL __attribute__((returns_nonnull))
-
 #define BOOL_TO_STR(value) ((value) ? "true" : "false")
 
 #define RAD(angle) (2.0f * M_PI * angle / 360.0f)
@@ -24,17 +21,17 @@
     _realloc_or_exit(__FILE__, __LINE__, __FUNCTION__, (pointer), (size), \
                      (error_message_format)__VA_OPT__(, ) __VA_ARGS__)
 
+[[gnu::nonnull(1, 3, 5)]] [[gnu::returns_nonnull]]
 void *_malloc_or_exit(const char *const restrict file, const size_t line,
                       const char *const restrict function_name,
                       const size_t size,
-                      const char *const restrict error_message_format, ...)
-    NONNULL(1, 3, 5) RETURNS_NONNULL;
+                      const char *const restrict error_message_format, ...);
 
+[[gnu::nonnull(1, 3, 4, 6)]] [[gnu::returns_nonnull]]
 void *_realloc_or_exit(const char *const restrict file, const size_t line,
                        const char *const restrict function_name,
                        void *restrict pointer, const size_t size,
-                       const char *const restrict error_message_format, ...)
-    NONNULL(1, 3, 4, 6) RETURNS_NONNULL;
+                       const char *const restrict error_message_format, ...);
 #else
 #define file_and_line_param
 #define malloc_or_exit(size, error_message) \
@@ -42,26 +39,28 @@ void *_realloc_or_exit(const char *const restrict file, const size_t line,
 #define realloc_or_exit(pointer, size, error_message) \
     _realloc_or_exit((pointer), (size), (error_message))
 
-void *_malloc_or_exit(const size_t size, const char *error_message_format, ...)
-    NONNULL(2) RETURNS_NONNULL;
+[[gnu::nonnull(2)]] [[gnu::returns_nonnull]]
+void *_malloc_or_exit(const size_t size, const char *error_message_format, ...);
 
+[[gnu::nonnull(3)]] [[gnu::returns_nonnull]]
 void *_realloc_or_exit(void *pointer, const size_t size,
-                       const char *error_message_format, ...)
-    NONNULL(3) RETURNS_NONNULL;
+                       const char *error_message_format, ...);
 #endif
 
 uint64_t get_time_miliseconds(void);
 uint64_t get_time_microseconds(void);
 
+[[gnu::nonnull(1, 2)]]
 void copy_string(char *const restrict string_destination,
                  const char *const restrict string_source,
-                 const size_t max_size) NONNULL(1, 2);
+                 const size_t max_size);
 
-bool parse_int(const char *const restrict string, int *const restrict value)
-    NONNULL();
+[[gnu::nonnull]]
+bool parse_int(const char *const restrict string, int *const restrict value);
 
+[[gnu::nonnull]]
 bool parse_uint32(const char *const restrict string,
-                  uint32_t *const restrict value) NONNULL();
+                  uint32_t *const restrict value);
 
 static inline int min_int(const int a, const int b) {
     return a < b ? a : b;

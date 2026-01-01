@@ -7,8 +7,7 @@
 #include "config.h"
 #include "utils.h"
 
-static void camera_update_projection_matrix(Camera *const self) NONNULL();
-
+[[gnu::nonnull]]
 static void camera_update_projection_matrix(Camera *const self) {
     assert(self != NULL);
 

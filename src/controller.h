@@ -6,23 +6,24 @@
 #include "controller_array.h"
 #include "vec.h"
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-#define RETURNS_NONNULL __attribute__((returns_nonnull))
-
-ControllerArray *controller_get_connected_controllers(void) RETURNS_NONNULL;
+[[gnu::returns_nonnull]]
+ControllerArray *controller_get_connected_controllers(void);
 
 void controller_start_monitor(void);
 
 void controller_stop_monitor(void);
 
 #ifndef PROD
-const char *controller_get_name(const Controller *const self) NONNULL(1);
+[[gnu::nonnull(1)]]
+const char *controller_get_name(const Controller *const self);
 #endif
 
-int8_t controller_get_player_index(const Controller *const self) NONNULL();
+[[gnu::nonnull]]
+int8_t controller_get_player_index(const Controller *const self);
 
+[[gnu::nonnull(1)]]
 void controller_set_player_index(Controller *const self,
-                                 const int8_t player_index) NONNULL(1);
+                                 const int8_t player_index);
 
 /**
  * Destroy a controller created by controller_from_device_path() and
@@ -30,7 +31,8 @@ void controller_set_player_index(Controller *const self,
  *
  * \param self The pointer of the controller object to destroy.
  */
-void controller_destroy(Controller *const self) NONNULL();
+[[gnu::nonnull]]
+void controller_destroy(Controller *const self);
 
 /**
  * Retrieves the current position of the specified analog stick (left or right)
@@ -47,11 +49,13 @@ void controller_destroy(Controller *const self) NONNULL();
  *
  * \returns a vector containing the stick state.
  */
+[[gnu::nonnull(1)]]
 v2f controller_get_stick(const Controller *const self,
-                         const ControllerStick stick) NONNULL(1);
+                         const ControllerStick stick);
 
+[[gnu::nonnull(1)]]
 bool controller_get_button(const Controller *const self,
-                           const ControllerButton button) NONNULL(1);
+                           const ControllerButton button);
 
 /**
  * Start a rumble effect on the controller.
@@ -61,4 +65,5 @@ bool controller_get_button(const Controller *const self,
  *
  * \returns true on success, or false if there is an error starting the rumble.
  */
-bool controller_rumble(Controller *const self) NONNULL();
+[[gnu::nonnull]]
+bool controller_rumble(Controller *const self);

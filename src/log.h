@@ -6,8 +6,6 @@
 
 #include <stddef.h>
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-
 #if !defined(LOG_LEVEL_DEBUG) && !defined(LOG_LEVEL_ERROR)
 #ifdef PROD
 #define LOG_LEVEL_ERROR
@@ -21,7 +19,8 @@
  *
  * \param program_name The name of the program being executed.
  */
-void logger_init(const char *const program_name) NONNULL();
+[[gnu::nonnull]]
+void logger_init(const char *const program_name);
 
 /**
  * Free the resources used by the logging system.
@@ -29,11 +28,11 @@ void logger_init(const char *const program_name) NONNULL();
 void log_quit(void);
 
 #ifndef PROD
-#define PRINTF_LIKE __attribute__((format(printf, 4, 5)))
+#define PRINTF_LIKE gnu::format(printf, 4, 5)
 #define location_param                                  \
     const char *const restrict file, const size_t line, \
         const char *const restrict function_name,
-#define LOG_ERROR_NONNULL NONNULL(1, 3, 4)
+#define LOG_ERROR_NONNULL gnu::nonnull(1, 3, 4)
 
 #define log_errorf(format, ...)                   \
     _log_errorf(__FILE__, __LINE__, __FUNCTION__, \
@@ -64,14 +63,14 @@ void log_quit(void);
  * \param function_name The function name from were the message is printed.
  * \param format A printf like format for the log message.
  */
+[[gnu::nonnull(1, 3)]] [[PRINTF_LIKE]]
 void _log_debugf(const char *const restrict file, const size_t line,
                  const char *const restrict function_name,
-                 const char *const restrict format, ...) PRINTF_LIKE
-    NONNULL(1, 3);
+                 const char *const restrict format, ...);
 #else
-#define PRINTF_LIKE __attribute__((format(printf, 1, 2)))
+#define PRINTF_LIKE gnu::format(printf, 1, 2)
 #define location_param
-#define LOG_ERROR_NONNULL NONNULL(1)
+#define LOG_ERROR_NONNULL gnu::nonnull(1)
 
 #define log_errorf(format, ...) _log_errorf((format)__VA_OPT__(, ) __VA_ARGS__)
 #define log_errorf_errno(format, ...) \
@@ -94,8 +93,8 @@ void _log_debugf(const char *const restrict file, const size_t line,
  *                      is printed.
  * \param format A printf like format for the log message.
  */
-void _log_errorf(location_param const char *const restrict format,
-                 ...) PRINTF_LIKE LOG_ERROR_NONNULL;
+[[LOG_ERROR_NONNULL]] [[PRINTF_LIKE]]
+void _log_errorf(location_param const char *const restrict format, ...);
 
 /**
  * Log an error message with the given format and add the error message
@@ -113,5 +112,5 @@ void _log_errorf(location_param const char *const restrict format,
  *                      is printed.
  * \param format A printf like format for the log message.
  */
-void _log_errorf_errno(location_param const char *const restrict format,
-                       ...) PRINTF_LIKE LOG_ERROR_NONNULL;
+[[LOG_ERROR_NONNULL]] [[PRINTF_LIKE]]
+void _log_errorf_errno(location_param const char *const restrict format, ...);

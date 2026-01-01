@@ -1,15 +1,16 @@
 #pragma once
 
-#define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+[[gnu::nonnull(2)]]
+int main(const int argc, char *argv[]);
 
-int main(const int argc, char *argv[]) NONNULL(2);
+[[gnu::nonnull]]
+void run_callback(void (*callback)(void));
 
-void run_callback(void (*callback)(void)) NONNULL();
+[[gnu::nonnull(1)]]
+void run_callback_int(void (*callback)(const int), const int param);
 
-void run_callback_int(void (*callback)(const int), const int param) NONNULL(1);
-
-void run_callback_ptr(void (*callback)(void *const), void *const param)
-    NONNULL(1);
+[[gnu::nonnull(1)]]
+void run_callback_ptr(void (*callback)(void *const), void *const param);
 
 void wasm_main(void);
 

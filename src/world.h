@@ -26,33 +26,40 @@ typedef struct {
     BlockType place_block;
 } World;
 
-World *world_create(const uint32_t seed) RETURNS_NONNULL;
+[[gnu::returns_nonnull]]
+World *world_create(const uint32_t seed);
 
-void world_destroy(World *const self) NONNULL();
+[[gnu::nonnull]]
+void world_destroy(World *const self);
 
+[[gnu::nonnull]]
 void world_render(const World *const restrict self,
                   const Camera *const restrict camera,
-                  const Viewport *const restrict viewport) NONNULL();
+                  const Viewport *const restrict viewport);
 
-Chunk *world_get_chunk(const World *const self, const int x, const int z)
-    NONNULL(1);
+[[gnu::nonnull(1)]]
+Chunk *world_get_chunk(const World *const self, const int x, const int z);
 
-Block *world_get_block(const World *const self, const v3i block_position)
-    NONNULL(1);
+[[gnu::nonnull(1)]]
+Block *world_get_block(const World *const self, const v3i block_position);
 
-bool world_block_is_solid(const World *const self, const v3i block_position)
-    NONNULL(1);
+[[gnu::nonnull(1)]]
+bool world_block_is_solid(const World *const self, const v3i block_position);
 
 v2i world_position_to_chunk_coordinate(const v3f position);
 
+[[gnu::nonnull(1)]]
 void world_update_loaded_chunks(World *const self, const v2i old_chunk_position,
                                 const v2i new_chunk_position,
-                                const int8_t player_index) NONNULL(1);
+                                const int8_t player_index);
 
+[[gnu::nonnull(1)]]
 void world_load_chunks_around_player(World *const self,
                                      const v2i player_chunk_position,
-                                     const int8_t player_index) NONNULL(1);
+                                     const int8_t player_index);
 
-void world_place_block(World *const self, const v3i block_position) NONNULL();
+[[gnu::nonnull]]
+void world_place_block(World *const self, const v3i block_position);
 
-void world_break_block(World *const self, const v3i block_position) NONNULL();
+[[gnu::nonnull]]
+void world_break_block(World *const self, const v3i block_position);

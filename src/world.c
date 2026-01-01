@@ -770,6 +770,8 @@ void world_update_loaded_chunks(World *const self, const v2i old_chunk_position,
         max_int(0, old_chunk_position.y - WORLD_LOAD_DISTANCE);
     const int old_load_max_z =
         min_int(old_chunk_position.y + WORLD_LOAD_DISTANCE + 1, WORLD_SIZE);
+    assert(0 <= old_load_max_x && old_load_max_x <= WORLD_SIZE);
+    assert(0 <= old_load_max_z && old_load_max_z <= WORLD_SIZE);
 
     const int new_load_min_x =
         max_int(0, new_chunk_position.x - WORLD_LOAD_DISTANCE);
@@ -779,6 +781,8 @@ void world_update_loaded_chunks(World *const self, const v2i old_chunk_position,
         max_int(0, new_chunk_position.y - WORLD_LOAD_DISTANCE);
     const int new_load_max_z =
         min_int(new_chunk_position.y + WORLD_LOAD_DISTANCE + 1, WORLD_SIZE);
+    assert(0 <= new_load_max_x && new_load_max_x <= WORLD_SIZE);
+    assert(0 <= new_load_max_z && new_load_max_z <= WORLD_SIZE);
 
     for (int x = old_load_min_x; x < old_load_max_x; ++x) {
         for (int z = old_load_min_z; z < old_load_max_z; ++z) {

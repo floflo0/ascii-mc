@@ -27,7 +27,6 @@ export class Wasm {
         });
         this.#terminal = new Terminal();
         this.#jsObjectsMemory = new JsObjectsMemory();
-        console.assert(this.#terminal !== null);
     }
 
     async init() {

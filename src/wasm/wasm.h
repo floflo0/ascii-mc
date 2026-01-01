@@ -12,3 +12,5 @@ void run_callback_ptr(void (*callback)(void *const), void *const param)
     NONNULL(1);
 
 void wasm_main(void);
+
+void malloc_init(void);

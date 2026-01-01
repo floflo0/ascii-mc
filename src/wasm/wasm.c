@@ -20,6 +20,7 @@ void run_callback_ptr(void (*callback)(void *const), void *const param) {
 
 void wasm_main(void) {
     char *argv[] = {"ascii-mc", NULL};
+    malloc_init();
     main((sizeof(argv) / sizeof(*argv)) - 1, argv);
 
     exit(EXIT_SUCCESS);

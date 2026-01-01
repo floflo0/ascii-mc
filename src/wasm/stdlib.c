@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "js.h"
+#include "wasm.h"
 
 #define NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 
@@ -28,6 +29,8 @@ typedef struct Memory {
     bool used;
     bool allocated;
 } Memory;
+
+extern unsigned char __heap_base;
 
 Memory memory_chunks[MEMORY_CHUNKS_CAPACITY] = {0};
 Memory *base = NULL;
@@ -62,17 +65,22 @@ static void dump_memory_chunks(void) {
 #define dump_memory_chunks()
 #endif
 
-void *malloc(const size_t size) {
-    if (size == 0) return NULL;
+void malloc_init(void) {
+    assert(base == NULL);
+    base = memory_chunks;
+    base->size = JS_get_memory_size();
+    base->ptr = &__heap_base;
+    base->previous = NULL;
+    base->next = NULL;
+    base->used = true;
+    base->allocated = false;
+}
 
-    if (base == NULL) {
-        base = memory_chunks;
-        base->size = JS_get_memory_size();
-        base->ptr = JS_get_heap_base();
-        base->previous = NULL;
-        base->next = NULL;
-        base->used = true;
-        base->allocated = false;
+void *malloc(size_t size) {
+    assert(base != NULL);
+
+    if (size == 0) {
+        size = 1;
     }
 
     for (Memory *memory_chunk = base; memory_chunk != NULL;
@@ -156,13 +164,13 @@ void *realloc(void *ptr, size_t size) {
 
     assert(base != NULL);
 
-    Memory *memory_chunk = get_memory_chunk_from_ptr(ptr);
+    Memory *const memory_chunk = get_memory_chunk_from_ptr(ptr);
     assert(memory_chunk != NULL);
 
     if (memory_chunk->size == size) return ptr;
 
     if (memory_chunk->size > size) {
-        Memory *new_memory_chunk = get_memory_chunk();
+        Memory *const new_memory_chunk = get_memory_chunk();
         if (new_memory_chunk == NULL) {
             errno = ENOMEM;
             return NULL;

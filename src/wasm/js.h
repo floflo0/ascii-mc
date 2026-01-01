@@ -57,7 +57,6 @@ extern void JS_exit(const int status) __attribute__((__noreturn__));
 extern char JS_read_char(void);
 extern void JS_usleep(uint32_t usec);
 
-extern void *JS_get_heap_base(void) RETURNS_NONNULL;
 extern size_t JS_get_memory_size(void);
 
 extern int JS_get_terminal_width(void);

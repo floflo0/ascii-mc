@@ -192,11 +192,6 @@ export class Wasm {
             JS_get_memory_size: (): SizeT => {
                 return this.#memory.buffer.byteLength;
             },
-            JS_get_heap_base: (): Ptr => {
-                console.assert(this.#wasm !== null);
-                const { __heap_base } = this.#wasm!.instance.exports as Exports;
-                return __heap_base.value;
-            },
             JS_get_terminal_width: (): number => {
                 return this.#terminal.width;
             },

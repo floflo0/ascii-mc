@@ -158,7 +158,7 @@ export class Wasm {
                 console.assert(gamepad !== null);
                 return gamepad!.axes[axeIndex];
             },
-            JS_Gamepad_get_button: ( gamepadIndex: JS_Object,
+            JS_Gamepad_get_button: (gamepadIndex: JS_Object,
                 buttonIndex: number,
             ): boolean => {
                 console.assert(gamepadIndex != JS_NULL);

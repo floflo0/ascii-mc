@@ -816,8 +816,7 @@ void world_update_loaded_chunks(World *const self, const v2i old_chunk_position,
     }
 }
 
-// #ifndef __wasm__
-#if 0
+#ifndef __wasm__
 #ifndef WORLD_RENDER_SCHEDULER_DYNAMIC
 typedef struct {
     const World *self;
@@ -833,8 +832,7 @@ typedef struct {
     int to;
 } WorldRenderThread;
 
-static void *world_render_thread(void *const data) NONNULL();
-
+[[gnu::nonnull]]
 static void *world_render_thread(void *const data) {
     assert(data != NULL);
 

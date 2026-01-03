@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #include "player_game_mode.h"
 #include "vec.h"

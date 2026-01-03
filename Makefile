@@ -77,7 +77,8 @@ ifeq ($(PLATFORM), wasm)
 		-Wl,--export=run_callback                          \
 		-Wl,--export=run_callback_int                      \
 		-Wl,--export=run_callback_ptr                      \
-		-Wl,--import-memory
+		-Wl,--import-memory                                \
+		-Wl,-z,stack-size=8388608
 	ifeq ($(BUILD_TYPE), release)
 		CFLAGS += -Wl,--strip-all -Wl,-O3 -Wl,--lto-O3
 	endif

@@ -93,15 +93,8 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
 
     Mesh *const mesh = mesh_create(1024, 1024);
 
-#ifndef __wasm__
     int vertex_indices[(CHUNK_SIZE + 1) * (CHUNK_HEIGHT + 1) *
                        (CHUNK_SIZE + 1)];
-#else
-    int *const vertex_indices =
-        malloc_or_exit(sizeof(*vertex_indices) * (CHUNK_SIZE + 1) *
-                           (CHUNK_HEIGHT + 1) * (CHUNK_SIZE + 1),
-                       "failed to generate chunk mesh");
-#endif
 
     for (int x = 0; x <= CHUNK_SIZE; ++x) {
         for (int y = 0; y <= CHUNK_HEIGHT; ++y) {
@@ -546,10 +539,6 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
             }
         }
     }
-
-#ifdef __wasm__
-    free(vertex_indices);
-#endif
 
     log_debugf("generated mesh for chunk (%d, %d) in %f ms", self->x, self->z,
                (get_time_microseconds() - start) / 1000.0f);

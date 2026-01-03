@@ -67,6 +67,7 @@ ifeq ($(PLATFORM), wasm)
 		-I$(WASM_BUILD_DIR)                                \
 		-D_BITS_STDIO_H                                    \
 		-D__NO_CTYPE                                       \
+		-D_BITS_PTHREADTYPES_COMMON_H                      \
 		--target=wasm32                                    \
 		--sysroot=/usr                                     \
 		--no-standard-libraries                            \

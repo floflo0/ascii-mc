@@ -1,7 +1,9 @@
 #include "game.h"
 
 #include <assert.h>
+#ifndef __wasm__
 #include <signal.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 

@@ -147,6 +147,11 @@ void window_init(const bool force_tty, const bool force_no_tty) {
     const size_t window_size = window.width * window.height;
     window.pixels = malloc_or_exit(sizeof(*window.pixels) * window_size,
                                    "failed to create window pixels buffer");
+#ifndef __wasm__
+    for (size_t i = 0; i < window_size; ++i) {
+        pthread_mutex_init(&window.pixels[i].mutex, NULL);
+    }
+#endif
     window.display_buffer = malloc_or_exit(
         DISPLAY_BUFFER_SIZE(
             window.display_buffer, window_size,

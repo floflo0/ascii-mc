@@ -575,7 +575,7 @@ static inline void game_render_multiplayer(void) {
 }
 #else
 static inline void game_render_multiplayer(void) {
-    for (int8_t i = 1; i < game.number_players; ++i) {
+    for (int8_t i = 0; i < game.number_players; ++i) {
         game_player_render_thread(&game.players[i]);
     }
 }

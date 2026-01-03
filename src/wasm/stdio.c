@@ -104,22 +104,33 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
     return output_ptr;
 }
 
-#define APPEND_STRING(string, append_char)                          \
-    do {                                                            \
-        if (string_min_length > 0) {                                \
-            const int padding = string_min_length - strlen(string); \
-            for (int i = 0; i < padding; ++i) {                     \
-                const char chr = padding_char;                      \
-                append_char;                                        \
-                ++count;                                            \
-            }                                                       \
-        }                                                           \
-        const char *string_ptr = string;                            \
-        while (*string_ptr) {                                       \
-            const char chr = *string_ptr++;                         \
-            append_char;                                            \
-            ++count;                                                \
-        }                                                           \
+#define APPEND_STRING(string, append_char)           \
+    do {                                             \
+        if (padding_right > 0) {                     \
+            const int padding =                      \
+                padding_right - strlen(string);      \
+            for (int i = 0; i < padding; ++i) {      \
+                const char chr = padding_right_char; \
+                append_char;                         \
+                ++count;                             \
+            }                                        \
+        }                                            \
+        const char *string_ptr = string;             \
+        while (*string_ptr) {                        \
+            const char chr = *string_ptr++;          \
+            append_char;                             \
+            ++count;                                 \
+        }                                            \
+        if (padding_left > 0) {                      \
+            const int padding = padding_right > 0 ?  \
+                padding_left - padding_right :       \
+                padding_left - strlen(string);       \
+            for (int i = 0; i < padding; ++i) {      \
+                const char chr = ' ';                \
+                append_char;                         \
+                ++count;                             \
+            }                                        \
+        }                                            \
     } while (0)
 
 #define PRINTF_IMP(append_char)                                                \
@@ -131,8 +142,9 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                 ++count;                                                       \
                 continue;                                                      \
             }                                                                  \
-            int string_min_length = -1;                                        \
-            char padding_char = ' ';                                           \
+            int padding_right = -1;                                            \
+            int padding_left = -1;                                             \
+            char padding_right_char = ' ';                                     \
             int double_decimal_part_length =                                   \
                 DEFAULT_DOUBLE_DECIMAL_PART_MAX_LENGTH;                        \
             ++format;                                                          \
@@ -153,8 +165,8 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                 }                                                              \
                                                                                \
                 case 's': {                                                    \
-                    assert(padding_char == ' ' &&                              \
-                           "unsupported padding_char for %s");                 \
+                    assert(padding_right_char == ' ' &&                        \
+                           "unsupported padding_right_char for %s");           \
                     const char *string = va_arg(ap, char *);                   \
                     APPEND_STRING(string, append_char);                        \
                     break;                                                     \
@@ -205,8 +217,8 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                     assert(false && "unreachable");                            \
                                                                                \
                 case 'p': {                                                    \
-                    assert(padding_char == ' ' &&                              \
-                           "unsupported padding_char for %s");                 \
+                    assert(padding_right_char == ' ' &&                        \
+                           "unsupported padding_right_char for %s");           \
                     char chr = '0';                                            \
                     append_char;                                               \
                     ++count;                                                   \
@@ -259,17 +271,24 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                     }                                                          \
                     assert(false && "unreachable");                            \
                                                                                \
+                case '-':                                                      \
+                    assert(format[1] == '*');                                  \
+                    format += 2;                                               \
+                    padding_left = va_arg(ap, int);                            \
+                    goto parse_format;                                         \
+                    break;                                                     \
+                                                                               \
                 default:                                                       \
                     if (isdigit(*format)) {                                    \
-                        string_min_length = 0;                                 \
+                        padding_right = 0;                                     \
                         if (*format == '0') {                                  \
-                            padding_char = '0';                                \
+                            padding_right_char = '0';                          \
                             ++format;                                          \
                             assert(isdigit(*format));                          \
                         }                                                      \
                         do {                                                   \
-                            string_min_length =                                \
-                                string_min_length * 10 + *format - '0';        \
+                            padding_right =                                    \
+                                padding_right * 10 + *format - '0';            \
                             ++format;                                          \
                         } while (isdigit(*format));                            \
                         goto parse_format;                                     \

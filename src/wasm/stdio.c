@@ -104,33 +104,32 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
     return output_ptr;
 }
 
-#define APPEND_STRING(string, append_char)           \
-    do {                                             \
-        if (padding_right > 0) {                     \
-            const int padding =                      \
-                padding_right - strlen(string);      \
-            for (int i = 0; i < padding; ++i) {      \
-                const char chr = padding_right_char; \
-                append_char;                         \
-                ++count;                             \
-            }                                        \
-        }                                            \
-        const char *string_ptr = string;             \
-        while (*string_ptr) {                        \
-            const char chr = *string_ptr++;          \
-            append_char;                             \
-            ++count;                                 \
-        }                                            \
-        if (padding_left > 0) {                      \
-            const int padding = padding_right > 0 ?  \
-                padding_left - padding_right :       \
-                padding_left - strlen(string);       \
-            for (int i = 0; i < padding; ++i) {      \
-                const char chr = ' ';                \
-                append_char;                         \
-                ++count;                             \
-            }                                        \
-        }                                            \
+#define APPEND_STRING(string, append_char)                           \
+    do {                                                             \
+        if (padding_right > 0) {                                     \
+            const int padding = padding_right - strlen(string);      \
+            for (int i = 0; i < padding; ++i) {                      \
+                const char chr = padding_right_char;                 \
+                append_char;                                         \
+                ++count;                                             \
+            }                                                        \
+        }                                                            \
+        const char *string_ptr = string;                             \
+        while (*string_ptr) {                                        \
+            const char chr = *string_ptr++;                          \
+            append_char;                                             \
+            ++count;                                                 \
+        }                                                            \
+        if (padding_left > 0) {                                      \
+            const int padding = padding_right > 0                    \
+                                    ? padding_left - padding_right   \
+                                    : padding_left - strlen(string); \
+            for (int i = 0; i < padding; ++i) {                      \
+                const char chr = ' ';                                \
+                append_char;                                         \
+                ++count;                                             \
+            }                                                        \
+        }                                                            \
     } while (0)
 
 #define PRINTF_IMP(append_char)                                                \

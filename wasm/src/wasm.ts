@@ -5,17 +5,20 @@ import type { Exports } from './exports';
 import { JS_NULL, JsObjectsMemory, type JS_Object } from './js-object-memory';
 import { Terminal } from './terminal';
 import type { Ptr, SizeT, StringPtr } from './types';
-import { copyUint8Array } from './utils';
 
 const MEMORY_SIZE: number = 15625;  // 1024 MB
 
 const NULL: Ptr = 0;
+
+const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
 
 export class Wasm {
 
     #wasm: WebAssembly.WebAssemblyInstantiatedSource | null = null;
     readonly #wasmPath: string;
     readonly #memory: WebAssembly.Memory;
+    readonly #memoryView: Uint8Array;
     readonly #terminal: Terminal;
     readonly #jsObjectsMemory: JsObjectsMemory;
 
@@ -25,6 +28,7 @@ export class Wasm {
             initial: MEMORY_SIZE,
             maximum: MEMORY_SIZE,
         });
+        this.#memoryView = new Uint8Array(this.#memory.buffer);
         this.#terminal = new Terminal();
         this.#jsObjectsMemory = new JsObjectsMemory();
     }
@@ -68,10 +72,12 @@ export class Wasm {
                     this.#wasm!.instance.exports as Exports;
                 const array =
                     this.#jsObjectsMemory.get(arrayIndex) as Array<object>;
-                array.forEach(value => run_callback_int(
-                    callback,
-                    this.#jsObjectsMemory.add(value)
-                ));
+                for (let i = 0; i < array.length; ++i) {
+                    run_callback_int(
+                        callback,
+                        this.#jsObjectsMemory.add(array[i])
+                    )
+                }
             },
             JS_console_log: (ptr: StringPtr) => {
                 console.log(this.#str(ptr));
@@ -129,10 +135,14 @@ export class Wasm {
                     this.#jsObjectsMemory.get(gamepadIndex) as Gamepad | null;
                 console.assert(gamepad !== null);
                 console.assert(gamepad!.id.length < idSize);
-                const idBuffer = this.#getUint8Array(id, idSize);
-                const encodedId =
-                    (new TextEncoder()).encode(gamepad!.id + "\0");
-                copyUint8Array(idBuffer, encodedId);
+                const gamepadId = gamepad!.id;
+                const encodedId = textEncoder.encode(gamepadId + "\0");
+                if (idSize < encodedId.length) {
+                    throw new Error(
+                        `buffer too small to contain gamepad id '${gamepadId}'`
+                    );
+                }
+                this.#memoryView.set(encodedId, id);
             },
             JS_Gamepad_get_index: (gamepadIndex: JS_Object): number => {
                 console.assert(gamepadIndex != JS_NULL);
@@ -184,8 +194,12 @@ export class Wasm {
                 });
             },
             JS_write: (bufferPtr: Ptr, count: SizeT) => {
-                const buffer = this.#str(bufferPtr, count);
-                this.#terminal.setContent(buffer);
+                this.#terminal.setContent(
+                    textDecoder.decode(this.#memoryView.subarray(
+                        bufferPtr,
+                        bufferPtr + count,
+                    )),
+                );
             },
             JS_read_char: () => this.#terminal.readChar(),
             JS_get_memory_size: (): SizeT => {
@@ -200,24 +214,17 @@ export class Wasm {
             JS_exit: (status: number) => {
                 throw new Exit(status);
             },
-            JS_wait_for_next_frame: (): Promise<void> => {
-                return new Promise((resolve, _reject) => {
-                    requestAnimationFrame(() => resolve());
+            JS_wait_for_next_frame: async (): Promise<void> => {
+                await new Promise((resolve, _reject) => {
+                    requestAnimationFrame(resolve);
                 });
             },
         };
     }
 
-    #getUint8Array(ptr: Ptr, length: number): Uint8Array {
-        return new Uint8Array(this.#memory.buffer, ptr, length);
-    };
-
-    #str(ptr: StringPtr, size?: number): string {
-        if (size === undefined) {
-            const mem = new Uint8Array(this.#memory.buffer, ptr);
-            size = 0;
-            while (mem[size]) ++size;
-        }
-        return new TextDecoder().decode(this.#getUint8Array(ptr, size));
+    #str(ptr: StringPtr): string {
+        let end = ptr;
+        while (this.#memoryView[end]) ++end;
+        return textDecoder.decode(this.#memoryView.subarray(ptr, end));
     };
 }

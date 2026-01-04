@@ -90,7 +90,7 @@ void *malloc(size_t size) {
             dump_memory_chunks();
             return memory_chunk->ptr;
         } else if (memory_chunk->size > size) {
-            Memory *new_memory_chunk = get_memory_chunk();
+            Memory *const new_memory_chunk = get_memory_chunk();
             if (new_memory_chunk == NULL) {
                 break;
             }

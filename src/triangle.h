@@ -26,6 +26,13 @@ typedef struct {
     Color color;
 } Triangle3D;
 
+typedef struct Triangle3DArena {
+    Triangle3D *start;
+    Triangle3D *end;
+    Triangle3D *next;
+    struct Triangle3DArena *next_arena;
+} Triangle3DArena;
+
 typedef struct {
     size_t v1;
     size_t v2;
@@ -38,20 +45,25 @@ typedef struct {
     uint8_t edges;
 } TriangleIndex;
 
-[[gnu::nonnull(1, 2, 3)]] [[gnu::returns_nonnull]]
+[[gnu::nonnull(1, 2, 3, 10)]] [[gnu::returns_nonnull]]
 Triangle3D *triangle3D_init_v3f(
     const v3f *const restrict v1, const v3f *const restrict v2,
     const v3f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
-    const uint8_t edges, const Texture *const texture, const Color color);
+    const uint8_t edges, const Texture *const restrict texture,
+    const Color color, Triangle3DArena *const restrict arena);
 
-[[gnu::nonnull(1, 2, 3)]] [[gnu::returns_nonnull]]
+[[gnu::nonnull(1, 2, 3, 10)]] [[gnu::returns_nonnull]]
 Triangle3D *triangle3D_init_v4f(
     const v4f *const restrict v1, const v4f *const restrict v2,
     const v4f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
-    const uint8_t edges, const Texture *const texture, const Color color);
-
-[[gnu::nonnull]]
-void triangle3D_destroy(Triangle3D *const triangle);
+    const uint8_t edges, const Texture *const restrict texture,
+    const Color color, Triangle3DArena *const restrict arena);
 
 [[gnu::nonnull]]
 v3f triangle3D_get_normal(const Triangle3D *const triangle);
+
+[[gnu::returns_nonnull]]
+Triangle3DArena *triangle3D_arena_create(const size_t capacity);
+
+[[gnu::nonnull]]
+void triangle3D_arena_destroy(Triangle3DArena *const self);

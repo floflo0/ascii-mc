@@ -74,15 +74,17 @@ static float get_interpolation(const v3f v1, const v3f v2, const v3f v3) {
     return v3f_dot(v3f_sub(v2, v1), v3_sub_v1) / v3f_norm_squared(v3_sub_v1);
 }
 
-[[gnu::nonnull(1, 3, 4)]]
+[[gnu::nonnull(1, 3, 4, 5)]]
 static void planes_clip_triangle(const Plane planes[6],
                                  const uint8_t plane_index,
                                  Triangle3D *const restrict triangle,
-                                 Triangle3DArray *const restrict array) {
+                                 Triangle3DArray *const restrict array,
+                                 Triangle3DArena *const restrict arena) {
     assert(planes != NULL);
     assert(plane_index <= 6);
     assert(triangle != NULL);
     assert(array != NULL);
+    assert(arena != NULL);
 
     if (plane_index == 6) {
         triangle3D_array_push(array, triangle);
@@ -98,7 +100,8 @@ static void planes_clip_triangle(const Plane planes[6],
     if (v1_in) {
         if (v2_in) {
             if (v3_in) {
-                planes_clip_triangle(planes, plane_index + 1, triangle, array);
+                planes_clip_triangle(planes, plane_index + 1, triangle, array,
+                                     arena);
                 return;
             }
 
@@ -124,15 +127,16 @@ static void planes_clip_triangle(const Plane planes[6],
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR),
-                    triangle->texture, triangle->color),
-                array);
+                    triangle->texture, triangle->color, arena),
+                array, arena);
 
             triangle->v2 = intersect_v2_v3;
             triangle->v3 = intersect_v1_v3;
             triangle->uv2 = uv_v2_v3;
             triangle->uv3 = uv_v1_v3;
             triangle->edges &= TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V3_V1_FAR;
-            planes_clip_triangle(planes, plane_index + 1, triangle, array);
+            planes_clip_triangle(planes, plane_index + 1, triangle, array,
+                                 arena);
             return;
         }
 
@@ -159,15 +163,16 @@ static void planes_clip_triangle(const Plane planes[6],
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V3_V1 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V3_V1_FAR),
-                    triangle->texture, triangle->color),
-                array);
+                    triangle->texture, triangle->color, arena),
+                array, arena);
 
             triangle->v1 = intersect_v1_v2;
             triangle->v2 = intersect_v2_v3;
             triangle->uv1 = uv_v1_v2;
             triangle->uv2 = uv_v2_v3;
             triangle->edges &= TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V2_V3_FAR;
-            planes_clip_triangle(planes, plane_index + 1, triangle, array);
+            planes_clip_triangle(planes, plane_index + 1, triangle, array,
+                                 arena);
             return;
         }
 
@@ -191,7 +196,7 @@ static void planes_clip_triangle(const Plane planes[6],
         triangle->uv3 = uv_v1_v3;
         triangle->edges &= (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V3_V1 |
                             TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V3_V1_FAR);
-        planes_clip_triangle(planes, plane_index + 1, triangle, array);
+        planes_clip_triangle(planes, plane_index + 1, triangle, array, arena);
         return;
     }
 
@@ -219,15 +224,16 @@ static void planes_clip_triangle(const Plane planes[6],
                     triangle->edges &
                         (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                          TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR),
-                    triangle->texture, triangle->color),
-                array);
+                    triangle->texture, triangle->color, arena),
+                array, arena);
 
             triangle->v1 = intersect_v1_v3;
             triangle->v2 = intersect_v1_v2;
             triangle->uv1 = uv_v1_v3;
             triangle->uv2 = uv_v1_v2;
             triangle->edges &= TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V3_V1_FAR;
-            planes_clip_triangle(planes, plane_index + 1, triangle, array);
+            planes_clip_triangle(planes, plane_index + 1, triangle, array,
+                                 arena);
             return;
         }
         const v4f intersect_v1_v2 =
@@ -250,7 +256,7 @@ static void planes_clip_triangle(const Plane planes[6],
         triangle->uv3 = uv_v2_v3;
         triangle->edges &= (TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 |
                             TRIANGLE_EDGE_V1_V2_FAR | TRIANGLE_EDGE_V2_V3_FAR);
-        planes_clip_triangle(planes, plane_index + 1, triangle, array);
+        planes_clip_triangle(planes, plane_index + 1, triangle, array, arena);
         return;
     }
 
@@ -275,20 +281,20 @@ static void planes_clip_triangle(const Plane planes[6],
         triangle->uv2 = uv_v2_v3;
         triangle->edges &= (TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 |
                             TRIANGLE_EDGE_V2_V3_FAR | TRIANGLE_EDGE_V3_V1_FAR);
-        planes_clip_triangle(planes, plane_index + 1, triangle, array);
+        planes_clip_triangle(planes, plane_index + 1, triangle, array, arena);
         return;
     }
-
-    triangle3D_destroy(triangle);
 }
 
 [[gnu::nonnull]]
 static inline void clip_triangle(const Camera *const restrict camera,
                                  Triangle3D *const restrict triangle,
-                                 Triangle3DArray *const restrict array) {
+                                 Triangle3DArray *const restrict array,
+                                 Triangle3DArena *const restrict arena) {
     assert(camera != NULL);
     assert(triangle != NULL);
     assert(array != NULL);
+    assert(arena != NULL);
 
     const float d = tanf(CAMERA_FOV / 2.0f);
     const float a = atanf(d / CHARACTER_RATIO);
@@ -311,14 +317,16 @@ static inline void clip_triangle(const Camera *const restrict camera,
         // right
         {{-cos_b, 0.0f, sin_b}, 0.0f},
     };
-    planes_clip_triangle(planes, 0, triangle, array);
+    planes_clip_triangle(planes, 0, triangle, array, arena);
 }
 
 [[gnu::nonnull]] [[gnu::returns_nonnull]]
 static inline Triangle3DArray *mesh_get_viewed_triangles(
-    const Mesh *const restrict self, const Camera *const restrict camera) {
+    const Mesh *const restrict self, const Camera *const restrict camera,
+    Triangle3DArena *const restrict arena) {
     assert(self != NULL);
     assert(camera != NULL);
+    assert(arena != NULL);
 
     Triangle3DArray *const array =
         triangle3D_array_create(self->triangles->length);
@@ -332,12 +340,10 @@ static inline Triangle3DArray *mesh_get_viewed_triangles(
             &view_vertices[triangle_index->v2],
             &view_vertices[triangle_index->v3], triangle_index->uv1,
             triangle_index->uv2, triangle_index->uv3, triangle_index->edges,
-            triangle_index->texture, triangle_index->color);
+            triangle_index->texture, triangle_index->color, arena);
         const v3f triangle_normal = triangle3D_get_normal(triangle);
         if (v3f_dot(triangle->v1.xyz, triangle_normal) < 0.0f) {
-            clip_triangle(camera, triangle, array);
-        } else {
-            triangle3D_destroy(triangle);
+            clip_triangle(camera, triangle, array, arena);
         }
     }
 
@@ -355,8 +361,11 @@ void mesh_render(const Mesh *const restrict self,
 
     static const char shade_char[] = {'.', ';', '!'};
 
+    Triangle3DArena *const arena =
+        triangle3D_arena_create(2 * self->triangles->length);
+
     Triangle3DArray *const viewed_triangles =
-        mesh_get_viewed_triangles(self, camera);
+        mesh_get_viewed_triangles(self, camera, arena);
 
     m4f camera_rotation_matrix;
     camera_get_rotation_matrix(camera, camera_rotation_matrix);
@@ -416,8 +425,8 @@ void mesh_render(const Mesh *const restrict self,
                          viewport->height * (-triangle->v3.y + 1.0f) / 2.0f;
 
         window_render_triangle(triangle);
-        triangle3D_destroy(triangle);
     }
 
     array_destroy((Array *)viewed_triangles);
+    triangle3D_arena_destroy(arena);
 }

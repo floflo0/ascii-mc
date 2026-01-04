@@ -89,6 +89,8 @@ WASM_OPT_FLAGS := \
 	--pass-arg=asyncify-imports@env.JS_wait_for_next_frame,env.JS_usleep
 ifeq ($(BUILD_TYPE), release)
 	WASM_OPT_FLAGS += -O3
+else ifeq ($(BUILD_TYPE), debug)
+	WASM_OPT_FLAGS += --debuginfo
 endif
 
 TESTS_DIR := tests

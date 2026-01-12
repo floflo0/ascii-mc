@@ -15,6 +15,10 @@
 #include "window.h"
 #include "world.h"
 
+#ifdef __wasm__
+#include "wasm/js.h"
+#endif
+
 #ifdef GAME_MAX_FRAMERATE
 #include <unistd.h>
 #endif
@@ -597,28 +601,42 @@ static inline void game_render(const float delta_time_seconds) {
     window_flush();
 }
 
-void game_run(void) {
-    assert(game.running);
+static inline void game_loop(void) {
+    static uint64_t frame_start_time_microseconds = 0;
 
-    uint64_t frame_start_time_microseconds = get_time_microseconds();
-    float delta_time_seconds = 0.0f;
+    const uint64_t frame_end_time_microseconds = get_time_microseconds();
+    const float delta_time_seconds =
+        (frame_end_time_microseconds - frame_start_time_microseconds) *
+        0.000001f;
+    frame_start_time_microseconds = frame_end_time_microseconds;
 
-    log_debugf("game launched");
-    while (game.running) {
-        game_update(delta_time_seconds);
-        game_render(delta_time_seconds);
+    game_update(delta_time_seconds);
+    game_render(delta_time_seconds);
 
-#ifdef GAME_MAX_FRAMERATE
+#ifdef __wasm__
+    if (game.running) {
+        JS_requestAnimationFrame(game_loop);
+    }
+#elifdef GAME_MAX_FRAMERATE
         const uint64_t delta_time_microseconds =
             get_time_microseconds() - frame_start_time_microseconds;
         if (delta_time_microseconds < 1000000 / GAME_MAX_FRAMERATE) {
             usleep((1000000 / GAME_MAX_FRAMERATE) - delta_time_microseconds);
         }
 #endif
-        const uint64_t frame_end_time_microseconds = get_time_microseconds();
-        delta_time_seconds =
-            (frame_end_time_microseconds - frame_start_time_microseconds) /
-            1000000.0f;
-        frame_start_time_microseconds = frame_end_time_microseconds;
+}
+
+void game_run(void) {
+    assert(game.running);
+
+    log_debugf("game launched");
+#ifndef __wasm__
+    while (game.running) {
+#endif
+
+        game_loop();
+
+#ifndef __wasm__
     }
+#endif
 }

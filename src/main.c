@@ -59,9 +59,11 @@ int main([[maybe_unused]] const int argc, char *argv[]) {
 
     game_init(number_players, world_seed, args.force_tty, args.force_no_tty);
     game_run();
-    game_quit();
 
+#ifndef __wasm__
+    game_quit();
     log_quit();
+#endif
 
     return EXIT_SUCCESS;
 }

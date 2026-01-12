@@ -86,7 +86,7 @@ endif
 
 WASM_OPT_FLAGS := \
 	--asyncify    \
-	--pass-arg=asyncify-imports@env.JS_wait_for_next_frame,env.JS_usleep
+	--pass-arg=asyncify-imports@env.JS_usleep
 ifeq ($(BUILD_TYPE), release)
 	WASM_OPT_FLAGS += -O3
 else ifeq ($(BUILD_TYPE), debug)

@@ -283,9 +283,6 @@ static inline void handle_keyboard_input(void) {
 
 void window_update(void) {
     assert(window.is_init);
-#ifdef __wasm__
-    JS_wait_for_next_frame();
-#endif
     window_detect_resize();
     handle_keyboard_input();
 }

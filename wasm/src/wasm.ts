@@ -48,10 +48,12 @@ export class Wasm {
             await wasm_main();
         } catch (error) {
             if (error instanceof Exit) {
-                this.#terminal.printMessage(
-                    `Process exit with ${error.status} code.\n\n` +
-                    'Refresh the page to restart the game.',
-                );
+                if (error.status != 0) {
+                    this.#terminal.printMessage(
+                        `Process exit with ${error.status} code.\n\n` +
+                        'Refresh the page to restart the game.',
+                    );
+                }
                 return;
             }
 
@@ -213,11 +215,6 @@ export class Wasm {
             },
             JS_exit: (status: number) => {
                 throw new Exit(status);
-            },
-            JS_wait_for_next_frame: async (): Promise<void> => {
-                await new Promise((resolve, _reject) => {
-                    requestAnimationFrame(resolve);
-                });
             },
         };
     }

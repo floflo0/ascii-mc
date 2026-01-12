@@ -75,5 +75,3 @@ extern size_t JS_get_memory_size(void);
 
 extern int JS_get_terminal_width(void);
 extern int JS_get_terminal_height(void);
-
-extern void JS_wait_for_next_frame(void);

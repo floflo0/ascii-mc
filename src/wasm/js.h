@@ -31,23 +31,6 @@ extern void JS_cancelAnimationFrame(const int requestId);
 extern uint64_t JS_Date_now(void);
 extern double JS_performance_now(void);
 
-[[gnu::const]]
-extern double JS_Math_pow(const double x, const double y);
-[[gnu::const]]
-extern double JS_Math_cos(const double x);
-[[gnu::const]]
-extern double JS_Math_sin(const double x);
-[[gnu::const]]
-extern double JS_Math_tan(const double x);
-[[gnu::const]]
-extern double JS_Math_atan(const double x);
-[[gnu::const]]
-extern double JS_Math_round(const double x);
-[[gnu::const]]
-extern bool JS_isNaN(const double x);
-[[gnu::const]]
-extern double JS_fmod(const double x, const double y);
-
 extern JS_GamepadArray JS_navigator_getGamepads(void);
 extern JS_Gamepad JS_GamepadArray_get(const JS_GamepadArray array,
                                       const int gamepad_index);
@@ -66,10 +49,7 @@ extern void JS_Object_free(const JS_Object object);
 
 [[gnu::nonnull(1)]]
 extern void JS_write(const void *const buf, const size_t count);
-[[noreturn]]
-extern void JS_exit(const int status);
 extern char JS_read_char(void);
-extern void JS_usleep(uint32_t usec);
 
 extern size_t JS_get_memory_size(void);
 

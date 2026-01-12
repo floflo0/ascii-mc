@@ -109,14 +109,16 @@ export class Wasm {
             JS_cancelAnimationFrame: cancelAnimationFrame,
             JS_Date_now: () => BigInt(Date.now()),
             JS_performance_now: () => Number(performance.now()),
-            JS_Math_pow: Math.pow,
-            JS_Math_cos: Math.cos,
-            JS_Math_sin: Math.sin,
-            JS_Math_tan: Math.tan,
-            JS_Math_atan: Math.atan,
-            JS_Math_round: Math.round,
-            JS_isNaN: isNaN,
-            JS_fmod: (x: number, y: number) => x % y,
+            pow: Math.pow,
+            powf: Math.pow,
+            cosf: Math.cos,
+            sinf: Math.sin,
+            tanf: Math.tan,
+            atanf: Math.atan,
+            roundf: Math.round,
+            isnanf: isNaN,
+            fmod: (x: number, y: number) => x % y,
+            fmodf: (x: number, y: number) => x % y,
             JS_navigator_getGamepads: () => {
                 return this.#jsObjectsMemory.add(navigator.getGamepads());
             },
@@ -206,7 +208,7 @@ export class Wasm {
             JS_get_terminal_height: (): number => {
                 return this.#terminal.height;
             },
-            JS_exit: (status: number) => {
+            _exit: (status: number) => {
                 throw new Exit(status);
             },
         };

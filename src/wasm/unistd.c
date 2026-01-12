@@ -47,11 +47,6 @@ void _exit(int status) {
     JS_exit(status);
 }
 
-int usleep(const useconds_t usec) {
-    JS_usleep(usec);
-    return 0;
-}
-
 char *ttyname(int fd) {
     if (fd == STDOUT_FILENO) return "/dev/pts/1";
     return "";

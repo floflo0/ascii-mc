@@ -84,9 +84,7 @@ ifeq ($(PLATFORM), wasm)
 	endif
 endif
 
-WASM_OPT_FLAGS := \
-	--asyncify    \
-	--pass-arg=asyncify-imports@env.JS_usleep
+WASM_OPT_FLAGS :=
 ifeq ($(BUILD_TYPE), release)
 	WASM_OPT_FLAGS += -O3
 else ifeq ($(BUILD_TYPE), debug)

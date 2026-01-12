@@ -1,5 +1,3 @@
-import { instantiateStreaming } from 'asyncify-wasm';
-
 import { Exit } from './exit';
 import type { Exports } from './exports';
 import { JS_NULL, JsObjectsMemory, type JS_Object } from './js-object-memory';
@@ -34,7 +32,7 @@ export class Wasm {
     }
 
     async init() {
-        this.#wasm = await instantiateStreaming(
+        this.#wasm = await WebAssembly.instantiateStreaming(
             fetch(this.#wasmPath),
             { env: this.#buildEnv() },
         );
@@ -189,11 +187,6 @@ export class Wasm {
             JS_Object_free: (objectIndex: JS_Object) => {
                 console.assert(objectIndex != JS_NULL);
                 this.#jsObjectsMemory.remove(objectIndex);
-            },
-            JS_usleep: (usec: number): Promise<void> => {
-                return new Promise((resolve, _reject) => {
-                    setTimeout(resolve, usec / 1000);
-                });
             },
             JS_write: (bufferPtr: Ptr, count: SizeT) => {
                 this.#terminal.setContent(

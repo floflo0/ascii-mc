@@ -7,7 +7,7 @@
 
 int ioctl([[maybe_unused]] const int fd, const unsigned long op, ...) {
     assert(fd == STDOUT_FILENO && "unsupported fd");
-    assert(op != TIOCGWINSZ && "unsupported op");
+    assert(op == TIOCGWINSZ && "unsupported op");
 
     va_list args;
     va_start(args, op);

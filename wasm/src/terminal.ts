@@ -1,4 +1,4 @@
-import { colorCodes } from './color-codes';
+import { COLOR_WHITE, colorCodesClasses } from './color-codes';
 
 const CTRL_C: number = 0x03;
 const KEY_BACKSPACE: number = 0x7f;
@@ -31,53 +31,30 @@ export class Terminal {
        }
 
     setContent(content: string) {
-        const width = this.width;
         let lineVisibleCharatersCount = 0;
-        let terminalContent = '';
-        let closeSpan: boolean = false;
+        let terminalContent =
+            `<span class="${colorCodesClasses[COLOR_WHITE]}">`;
         for (let i = 0; i < content.length; ++i) {
             if (content[i] == '\x1b') {
-                ++i;
-                if (content[i] != '[') continue;
+                console.assert(content[i + 1] == '[');
+                i += 2;
                 let code = '';
-                ++i;
-                let iterationsCount: number = 0;
-                const MAX_ITERATIONS: number = 10;
                 while (content[i] != 'm' && content[i] != 'l' &&
                        content[i] != 'h' && content[i] != 'H' &&
                        content[i] != 'i') {
                     code += content[i++];
-                    ++iterationsCount;
-                    if (iterationsCount >= MAX_ITERATIONS) {
-                        throw new Error(
-                            `unknown escape code '${code}'`
-                        );
-                    }
                 }
-                code += content[i];
-                if (code[code.length - 1] === 'm') {
-                    if (closeSpan) {
-                        terminalContent += '</span>';
-                    }
-                    const colorCode = code.substring(
-                        0,
-                        code.length - 1
-                    );
+                if (content[i] === 'm') {
                     terminalContent +=
-                        `<span class="color-${colorCodes[colorCode]}">`;
-                    closeSpan = true;
+                        `</span><span class="${colorCodesClasses[code]}">`;
                 }
                 continue;
             }
             terminalContent += content[i];
-            if (content[i] == '\n') {
+            ++lineVisibleCharatersCount;
+            if (lineVisibleCharatersCount === this.#width) {
                 lineVisibleCharatersCount = 0;
-            } else {
-                ++lineVisibleCharatersCount;
-                if (lineVisibleCharatersCount % width == 0) {
-                    lineVisibleCharatersCount = 0;
-                    terminalContent += '\n';
-                }
+                terminalContent += '\n';
             }
         }
         this.#terminalContentElement.innerHTML = terminalContent;
@@ -96,9 +73,7 @@ export class Terminal {
     }
 
     readChar(): number {
-        const char = this.#stdin.shift();
-        if (char === undefined) return -1;
-        return char;
+        return this.#stdin.shift() ?? -1;
     }
 
     #handleKeydown(event: KeyboardEvent) {

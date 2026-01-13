@@ -3,7 +3,6 @@ import mainWasm from './main.wasm?url';
 import './style.css'
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const wasm = new Wasm(mainWasm);
-    await wasm.init();
+    const wasm = await Wasm.fromUrl(mainWasm);
     wasm.run();
 });

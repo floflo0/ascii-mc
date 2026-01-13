@@ -30,6 +30,9 @@ typedef struct {
     ControllerArray controllers;
     Player players[4];
     uint64_t frame_start_time_microseconds;
+    float update_time;
+    float render_time;
+    float total_time;
     World *world;
     uint8_t controllers_count;
     uint8_t number_players;
@@ -453,28 +456,40 @@ static inline void game_render_debug_info(const float delta_time_seconds) {
     assert(delta_time_seconds >= 0.0f);
     assert(window.is_init);
 
-    char buffer[19];
+    char buffer[23];
     v2i position = {.x = window.width - sizeof(buffer) - 1, .y = 1};
-    window_render_string(position, "+----------------+", COLOR_WHITE,
+    window_render_string(position, "+--------------------+", COLOR_WHITE,
                          WINDOW_Z_BUFFER_FRONT);
     ++position.y;
 #ifdef PROD
-    window_render_string(position, "| prod build     |", COLOR_WHITE,
+    window_render_string(position, "| prod build         |", COLOR_WHITE,
                          WINDOW_Z_BUFFER_FRONT);
 #else
-    window_render_string(position, "| debug build    |", COLOR_WHITE,
+    window_render_string(position, "| debug build        |", COLOR_WHITE,
                          WINDOW_Z_BUFFER_FRONT);
 #endif
     ++position.y;
-    snprintf(buffer, sizeof(buffer), "| fps: %9.2f |",
+    snprintf(buffer, sizeof(buffer), "| fps: %13.2f |",
              1.0f / delta_time_seconds);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
-    snprintf(buffer, sizeof(buffer), "| dt: %7.2f ms |",
+    snprintf(buffer, sizeof(buffer), "| dt: %11.2f ms |",
              delta_time_seconds * 1000.0f);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
-    window_render_string(position, "+----------------+", COLOR_WHITE,
+    snprintf(buffer, sizeof(buffer), "| update: %7.2f ms |",
+             game.update_time);
+    window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
+    ++position.y;
+    snprintf(buffer, sizeof(buffer), "| render: %7.2f ms |",
+             game.render_time);
+    window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
+    ++position.y;
+    snprintf(buffer, sizeof(buffer), "| total: %8.2f ms |",
+             game.total_time);
+    window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
+    ++position.y;
+    window_render_string(position, "+--------------------+", COLOR_WHITE,
                          WINDOW_Z_BUFFER_FRONT);
 }
 
@@ -612,8 +627,14 @@ static inline void game_loop(void) {
         0.000001f;
     game.frame_start_time_microseconds = frame_end_time_microseconds;
 
+    const uint64_t update_start_time = get_time_microseconds();
     game_update(delta_time_seconds);
+    const uint64_t render_start_time = get_time_microseconds();
     game_render(delta_time_seconds);
+    const uint64_t render_end_time = get_time_microseconds();
+    game.update_time = (render_start_time - update_start_time) * 0.001f;
+    game.render_time = (render_end_time - render_start_time) * 0.001f;
+    game.total_time = (render_end_time - update_start_time) * 0.001f;
 
 #ifdef __wasm__
     if (game.running) {

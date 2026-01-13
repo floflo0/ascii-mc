@@ -1,6 +1,6 @@
 #pragma once
 
-#include "camera.h"
+#include "camera_defs.h"
 #include "collision.h"
 #include "controller_defs.h"
 #include "mesh.h"
@@ -10,7 +10,7 @@
 #include "world.h"
 
 typedef struct {
-    Camera *camera;
+    Camera camera;
     Controller *controller;
     Mesh *mesh;
     uint64_t last_grounded_time_microseconds;

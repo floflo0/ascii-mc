@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "camera.h"
 #include "config.h"
 #include "controller.h"
 #include "log.h"
@@ -229,14 +230,14 @@ void player_init(Player *const restrict self, const int8_t player_index,
 
     viewport_from_player_index(&self->viewport, player_index, number_players);
 
-    self->camera = camera_create(
-        (v3f){
-            .x = self->position.x,
-            .y = self->position.y + PLAYER_HEIGHT,
-            .z = self->position.z,
-        },
-        PLAYER_DEFAULT_YAW, PLAYER_DEFAULT_PITCH,
-        (float)self->viewport.width / self->viewport.height);
+    camera_init(&self->camera,
+                (v3f){
+                    .x = self->position.x,
+                    .y = self->position.y + PLAYER_HEIGHT,
+                    .z = self->position.z,
+                },
+                PLAYER_DEFAULT_YAW, PLAYER_DEFAULT_PITCH,
+                (float)self->viewport.width / self->viewport.height);
 
     player_generate_mesh(self);
 
@@ -262,7 +263,6 @@ void player_destroy(Player *const self) {
     if (self->controller != NULL) {
         controller_set_player_index(self->controller, -1);
     }
-    camera_destroy(self->camera);
     mesh_destroy(self->mesh);
 }
 
@@ -453,7 +453,7 @@ static inline void player_update_mesh(Player *const self) {
     player_generate_mesh(self);
 
     m4f rotation_y_matrix;
-    m4f_rotation_y(rotation_y_matrix, self->camera->yaw);
+    m4f_rotation_y(rotation_y_matrix, self->camera.yaw);
 
     for (size_t i = 0; i < self->mesh->vertices->length; ++i) {
         self->mesh->vertices->array[i] =
@@ -473,8 +473,8 @@ void player_update(Player *const restrict self, World *const restrict world,
         self->velocity.y -= G_FORCE * delta_time_seconds * 0.5f;
     }
 
-    const float cos_yaw = cosf(self->camera->yaw);
-    const float sin_yaw = sinf(self->camera->yaw);
+    const float cos_yaw = cosf(self->camera.yaw);
+    const float sin_yaw = sinf(self->camera.yaw);
 
     const v3f velocity = {
         .x = self->velocity.x + self->input_velocity.x * cos_yaw +
@@ -508,9 +508,9 @@ void player_update(Player *const restrict self, World *const restrict world,
         self->can_jump = true;
     }
 
-    self->camera->position.x = self->position.x;
-    self->camera->position.y = self->position.y + PLAYER_CAMERA_HEIGHT;
-    self->camera->position.z = self->position.z;
+    self->camera.position.x = self->position.x;
+    self->camera.position.y = self->position.y + PLAYER_CAMERA_HEIGHT;
+    self->camera.position.z = self->position.z;
 
     self->is_targeting_a_block = player_get_targeted_block(
         self, world, &self->targeted_block, &self->targeted_block_face);
@@ -532,7 +532,7 @@ void player_render(const Player *const restrict self,
 
 inline void player_rotate(Player *const self, const v2f rotation) {
     assert(self != NULL);
-    camera_rotate(self->camera, rotation);
+    camera_rotate(&self->camera, rotation);
 }
 
 void player_jump(Player *const self) {
@@ -715,7 +715,7 @@ void player_update_viewport(Player *const self, const uint8_t number_players) {
     viewport_from_player_index(&self->viewport, self->player_index,
                                number_players);
     camera_set_aspect_ratio(
-        self->camera, (float)self->viewport.width / self->viewport.height);
+        &self->camera, (float)self->viewport.width / self->viewport.height);
 }
 
 bool player_get_targeted_block(const Player *const restrict self,
@@ -727,9 +727,9 @@ bool player_get_targeted_block(const Player *const restrict self,
     assert(block_position != NULL);
     assert(collision_axis != NULL);
 
-    const v3f ray_start = self->camera->position;
+    const v3f ray_start = self->camera.position;
     const v3f ray_direction =
-        v3f_mul(camera_get_look_direction(self->camera), PLAYER_RANGE);
+        v3f_mul(camera_get_look_direction(&self->camera), PLAYER_RANGE);
 
     int min_x = floorf(ray_start.x);
     int max_x = floorf(ray_start.x + ray_direction.x);

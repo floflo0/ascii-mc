@@ -541,7 +541,7 @@ static inline void game_render_ui(const float delta_time_seconds) {
 static void *game_player_render_thread(void *const data) {
     assert(data != NULL);
     const Player *const player = data;
-    const Camera *const camera = player->camera;
+    const Camera *const camera = &player->camera;
     const Viewport *const viewport = &player->viewport;
 
     for (uint8_t j = 0; j < game.number_players; ++j) {

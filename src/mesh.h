@@ -1,6 +1,6 @@
 #pragma once
 
-#include "camera.h"
+#include "camera_defs.h"
 #include "triangle_index_array.h"
 #include "v3f_array.h"
 #include "viewport.h"

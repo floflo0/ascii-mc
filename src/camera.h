@@ -1,20 +1,10 @@
 #pragma once
 
-#include "vec.h"
+#include "camera_defs.h"
 
-typedef struct {
-    v3f position;
-    float yaw, pitch;
-    m4f projection_matrix;
-    float aspect_ratio;
-} Camera;
-
-[[gnu::returns_nonnull]]
-Camera *camera_create(const v3f position, const float yaw, const float pitch,
-                      const float aspect_ratio);
-
-[[gnu::nonnull]]
-void camera_destroy(Camera *const self);
+[[gnu::nonnull(1)]]
+void camera_init(Camera *const self, const v3f position, const float yaw,
+                 const float pitch, const float aspect_ratio);
 
 [[gnu::nonnull]]
 void camera_get_view_matrix(const Camera *const restrict self, m4f view_matrix);

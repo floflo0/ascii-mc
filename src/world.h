@@ -5,7 +5,7 @@
 #endif
 
 #include "block.h"
-#include "camera.h"
+#include "camera_defs.h"
 #include "config.h"
 #include "mesh.h"
 #include "viewport.h"

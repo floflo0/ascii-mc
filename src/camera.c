@@ -1,17 +1,14 @@
 #include "camera.h"
 
 #include <assert.h>
-#include <math.h>
-#include <stdlib.h>
 
 #include "config.h"
-#include "utils.h"
 
 [[gnu::nonnull]]
 static void camera_update_projection_matrix(Camera *const self) {
     assert(self != NULL);
 
-    const float d = 1 / tanf(CAMERA_FOV / 2.0f);
+    const float d = 1 / tanf(CAMERA_FOV * 0.5f);
     const float l = CAMERA_Z_FAR / (CAMERA_Z_FAR - CAMERA_Z_NEAR);
 
     self->projection_matrix[0] = d / self->aspect_ratio;
@@ -35,24 +32,14 @@ static void camera_update_projection_matrix(Camera *const self) {
     self->projection_matrix[15] = 0.0f;
 }
 
-Camera *camera_create(const v3f position, const float yaw, const float pitch,
-                      const float aspect_ratio) {
-    Camera *const self =
-        malloc_or_exit(sizeof(*self), "failed to create camera");
-
+void camera_init(Camera *const self, const v3f position, const float yaw,
+                 const float pitch, const float aspect_ratio) {
+    assert(self != NULL);
     self->position = position;
     self->yaw = yaw;
     self->pitch = pitch;
     self->aspect_ratio = aspect_ratio;
-
     camera_update_projection_matrix(self);
-
-    return self;
-}
-
-void camera_destroy(Camera *const self) {
-    assert(self != NULL);
-    free(self);
 }
 
 void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix) {
@@ -98,10 +85,10 @@ void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio) {
 void camera_rotate(Camera *const self, const v2f rotation) {
     assert(self != NULL);
     self->pitch += rotation.y;
-    if (self->pitch > M_PI / 2.0f) {
-        self->pitch = M_PI / 2.0f;
-    } else if (self->pitch < -M_PI / 2.0f) {
-        self->pitch = -M_PI / 2.0f;
+    if (self->pitch > M_PI_2) {
+        self->pitch = M_PI_2;
+    } else if (self->pitch < -M_PI_2) {
+        self->pitch = -M_PI_2;
     }
     self->yaw = fmodf(self->yaw + rotation.x, 2.0f * M_PI);
 }

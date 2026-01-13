@@ -19,6 +19,7 @@
 #include "texture.h"
 #include "threads.h"
 #include "utils.h"
+#include "vec.h"
 
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
@@ -594,10 +595,9 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
 #endif
 
 #ifdef RENDER_WIREFRAME
-static void window_render_triangle_wireframe(const Triangle3D *const triangle)
-    NONNULL();
-
-static void window_render_triangle_wireframe(const Triangle3D *const triangle) {
+[[gnu::nonnull]]
+static inline void window_render_triangle_wireframe(
+                                             const Triangle3D *const triangle) {
     assert(window.is_init);
     assert(triangle != NULL);
     window_render_line(triangle->v1.xyz, triangle->v2.xyz, triangle->color);

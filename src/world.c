@@ -7,10 +7,14 @@
 
 // #define LOG_LEVEL_ERROR
 #include "log.h"
+#include "mesh.h"
 #include "perlin_noise.h"
 #include "textures.h"
 #include "threads.h"
+#include "triangle_index_array.h"
 #include "utils.h"
+#include "v3f_array.h"
+#include "vec.h"
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
 
@@ -20,7 +24,7 @@
 
 [[gnu::nonnull(1, 2, 3)]]
 static int chunk_get_vertex_index(const Chunk *const restrict self,
-                                  const Mesh *const restrict mesh,
+                                  Mesh *const restrict mesh,
                                   int *vertex_indices, const uint8_t x,
                                   const uint8_t y, const uint8_t z) {
     assert(self != NULL);
@@ -30,17 +34,17 @@ static int chunk_get_vertex_index(const Chunk *const restrict self,
     if (vertex_indices[vertex_indices_index(x, y, z)] != -1)
         return vertex_indices[vertex_indices_index(x, y, z)];
 
-    const size_t i = v3f_array_grow(mesh->vertices);
-    mesh->vertices->array[i].x = self->x * CHUNK_SIZE + x;
-    mesh->vertices->array[i].y = y;
-    mesh->vertices->array[i].z = self->z * CHUNK_SIZE + z;
+    const size_t i = v3f_array_grow(&mesh->vertices);
+    mesh->vertices.array[i].x = self->x * CHUNK_SIZE + x;
+    mesh->vertices.array[i].y = y;
+    mesh->vertices.array[i].z = self->z * CHUNK_SIZE + z;
     vertex_indices[vertex_indices_index(x, y, z)] = i;
     return i;
 }
 
 [[gnu::nonnull]]
-static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
-                                        const World *const restrict world) {
+static inline void chunk_generate_mesh(Chunk *const restrict self,
+                                       const World *const restrict world) {
     assert(self != NULL);
     assert(world != NULL);
 
@@ -91,7 +95,7 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
     const uint64_t start = get_time_microseconds();
 #endif
 
-    Mesh *const mesh = mesh_create(1024, 1024);
+    mesh_clear(&self->mesh);
 
     int vertex_indices[(CHUNK_SIZE + 1) * (CHUNK_HEIGHT + 1) *
                        (CHUNK_SIZE + 1)];
@@ -249,14 +253,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                 size_t i;
                 TriangleIndex *triangle;
                 if (is_front_face_visible) {
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z);
+                        self, &self->mesh, vertex_indices, x, y, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z);
+                        self, &self->mesh, vertex_indices, x, y + 1, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -273,14 +277,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                         block_top_front)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z);
+                        self, &self->mesh, vertex_indices, x + 1, y, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z);
+                        self, &self->mesh, vertex_indices, x, y, z);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -297,14 +301,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                 }
 
                 if (is_right_face_visible) {
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z);
+                        self, &self->mesh, vertex_indices, x + 1, y, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z + 1);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -320,14 +324,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                         block_top_right)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z);
+                        self, &self->mesh, vertex_indices, x + 1, y, z);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -344,14 +348,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                 }
 
                 if (is_back_face_visible) {
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x, y + 1, z + 1);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -367,14 +371,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                         block_top_back)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x, y + 1, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z + 1);
+                        self, &self->mesh, vertex_indices, x, y, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y, z + 1);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -391,14 +395,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                 }
 
                 if (is_left_face_visible) {
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z + 1);
+                        self, &self->mesh, vertex_indices, x, y, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x, y + 1, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z);
+                        self, &self->mesh, vertex_indices, x, y + 1, z);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -414,14 +418,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                         block_top_left)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z);
+                        self, &self->mesh, vertex_indices, x, y + 1, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z);
+                        self, &self->mesh, vertex_indices, x, y, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z + 1);
+                        self, &self->mesh, vertex_indices, x, y, z + 1);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -444,14 +448,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                     const Color top_color =
                         block_top_colors[self->blocks[x][y][z].type];
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z);
+                        self, &self->mesh, vertex_indices, x, y + 1, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x, y + 1, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z + 1);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -465,14 +469,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                     if (is_back_face_visible || block_top_back)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y + 1, z);
+                        self, &self->mesh, vertex_indices, x + 1, y + 1, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y + 1, z);
+                        self, &self->mesh, vertex_indices, x, y + 1, z);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -494,14 +498,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                     const Color bottom_color =
                         block_bottom_colors[self->blocks[x][y][z].type];
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z + 1);
+                        self, &self->mesh, vertex_indices, x, y, z + 1);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z);
+                        self, &self->mesh, vertex_indices, x, y, z);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z);
+                        self, &self->mesh, vertex_indices, x + 1, y, z);
                     triangle->uv1 = (v2f){0.0f, 1.0f};
                     triangle->uv2 = (v2f){0.0f, 0.0f};
                     triangle->uv3 = (v2f){1.0f, 0.0f};
@@ -515,14 +519,14 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
                     if (is_front_face_visible || block_bottom_front)
                         triangle->edges |= TRIANGLE_EDGE_V2_V3_FAR;
 
-                    i = triangle_index_array_grow(mesh->triangles);
-                    triangle = &mesh->triangles->array[i];
+                    i = triangle_index_array_grow(&self->mesh.triangles);
+                    triangle = &self->mesh.triangles.array[i];
                     triangle->v1 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z);
+                        self, &self->mesh, vertex_indices, x + 1, y, z);
                     triangle->v2 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x + 1, y, z + 1);
+                        self, &self->mesh, vertex_indices, x + 1, y, z + 1);
                     triangle->v3 = chunk_get_vertex_index(
-                        self, mesh, vertex_indices, x, y, z + 1);
+                        self, &self->mesh, vertex_indices, x, y, z + 1);
                     triangle->uv1 = (v2f){1.0f, 0.0f};
                     triangle->uv2 = (v2f){1.0f, 1.0f};
                     triangle->uv3 = (v2f){0.0f, 1.0f};
@@ -539,16 +543,16 @@ static inline Mesh *chunk_generate_mesh(const Chunk *const restrict self,
             }
         }
     }
+    self->mesh_dirty = false;
 
     log_debugf("generated mesh for chunk (%d, %d) in %f ms", self->x, self->z,
                (get_time_microseconds() - start) / 1000.0f);
-
-    return mesh;
 }
 
 [[gnu::returns_nonnull]]
 static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
                            const int8_t player_index) {
+    assert(0 <= player_index && player_index < 4);
     log_debugf("load chunk (%d, %d)", x, z);
     Chunk *const self = malloc_or_exit(sizeof(*self), "failed to create chunk");
 
@@ -653,7 +657,8 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
         }
     }
 
-    self->mesh = NULL;
+    mesh_init(&self->mesh, 1024, 1024);
+    self->mesh_dirty = true;
 
     return self;
 }
@@ -664,9 +669,7 @@ static void chunk_destroy(Chunk *const self) {
 #ifndef __wasm__
     mutex_destroy(&self->mesh_mutex);
 #endif
-    if (self->mesh != NULL) {
-        mesh_destroy(self->mesh);
-    }
+    mesh_destroy(&self->mesh);
     free(self);
 }
 
@@ -681,21 +684,17 @@ static void chunk_render(Chunk *const restrict self,
     assert(viewport != NULL);
 
     mutex_lock(&self->mesh_mutex);
-    if (self->mesh == NULL) {
-        self->mesh = chunk_generate_mesh(self, world);
+    if (self->mesh_dirty) {
+        chunk_generate_mesh(self, world);
     }
     mutex_unlock(&self->mesh_mutex);
-    mesh_render(self->mesh, camera, viewport);
+    mesh_render(&self->mesh, camera, viewport);
 }
 
 [[gnu::nonnull]]
-static void chunk_make_mesh_dirty(Chunk *const self) {
+static inline void chunk_make_mesh_dirty(Chunk *const self) {
     assert(self != NULL);
-
-    if (self->mesh == NULL) return;
-
-    mesh_destroy(self->mesh);
-    self->mesh = NULL;
+    self->mesh_dirty = true;
 }
 
 World *world_create(const uint32_t seed) {

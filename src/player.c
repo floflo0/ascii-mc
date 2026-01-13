@@ -12,6 +12,10 @@
 #include "config.h"
 #include "controller.h"
 #include "log.h"
+#include "mesh.h"
+#include "triangle_index_array.h"
+#include "v3f_array.h"
+#include "vec.h"
 #include "window.h"
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
@@ -27,175 +31,173 @@ static inline void player_generate_mesh(Player *const self) {
         PLAYER_3_COLOR,
     };
 
-    self->mesh = mesh_create(8, 12);
-
     const float mesh_half_width = sqrtf(2.0f) * PLAYER_WIDTH / 4.0f;
 
     size_t i;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = -mesh_half_width;
-    self->mesh->vertices->array[i].y = 0.0f;
-    self->mesh->vertices->array[i].z = -mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = -mesh_half_width;
+    self->mesh.vertices.array[i].y = 0.0f;
+    self->mesh.vertices.array[i].z = -mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = -mesh_half_width;
-    self->mesh->vertices->array[i].y = PLAYER_HEIGHT;
-    self->mesh->vertices->array[i].z = -mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = -mesh_half_width;
+    self->mesh.vertices.array[i].y = PLAYER_HEIGHT;
+    self->mesh.vertices.array[i].z = -mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = mesh_half_width;
-    self->mesh->vertices->array[i].y = PLAYER_HEIGHT;
-    self->mesh->vertices->array[i].z = -mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = mesh_half_width;
+    self->mesh.vertices.array[i].y = PLAYER_HEIGHT;
+    self->mesh.vertices.array[i].z = -mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = mesh_half_width;
-    self->mesh->vertices->array[i].y = 0.0f;
-    self->mesh->vertices->array[i].z = -mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = mesh_half_width;
+    self->mesh.vertices.array[i].y = 0.0f;
+    self->mesh.vertices.array[i].z = -mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = -mesh_half_width;
-    self->mesh->vertices->array[i].y = 0.0f;
-    self->mesh->vertices->array[i].z = mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = -mesh_half_width;
+    self->mesh.vertices.array[i].y = 0.0f;
+    self->mesh.vertices.array[i].z = mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = -mesh_half_width;
-    self->mesh->vertices->array[i].y = PLAYER_HEIGHT;
-    self->mesh->vertices->array[i].z = mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = -mesh_half_width;
+    self->mesh.vertices.array[i].y = PLAYER_HEIGHT;
+    self->mesh.vertices.array[i].z = mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = mesh_half_width;
-    self->mesh->vertices->array[i].y = PLAYER_HEIGHT;
-    self->mesh->vertices->array[i].z = mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = mesh_half_width;
+    self->mesh.vertices.array[i].y = PLAYER_HEIGHT;
+    self->mesh.vertices.array[i].z = mesh_half_width;
 
-    i = v3f_array_grow(self->mesh->vertices);
-    self->mesh->vertices->array[i].x = mesh_half_width;
-    self->mesh->vertices->array[i].y = 0.0f;
-    self->mesh->vertices->array[i].z = mesh_half_width;
+    i = v3f_array_grow(&self->mesh.vertices);
+    self->mesh.vertices.array[i].x = mesh_half_width;
+    self->mesh.vertices.array[i].y = 0.0f;
+    self->mesh.vertices.array[i].z = mesh_half_width;
 
     // front face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 0;
-    self->mesh->triangles->array[i].v2 = 1;
-    self->mesh->triangles->array[i].v3 = 2;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 0;
+    self->mesh.triangles.array[i].v2 = 1;
+    self->mesh.triangles.array[i].v3 = 2;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 0;
-    self->mesh->triangles->array[i].v2 = 2;
-    self->mesh->triangles->array[i].v3 = 3;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 0;
+    self->mesh.triangles.array[i].v2 = 2;
+    self->mesh.triangles.array[i].v3 = 3;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 
     // left face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 3;
-    self->mesh->triangles->array[i].v2 = 2;
-    self->mesh->triangles->array[i].v3 = 6;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 3;
+    self->mesh.triangles.array[i].v2 = 2;
+    self->mesh.triangles.array[i].v3 = 6;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 3;
-    self->mesh->triangles->array[i].v2 = 6;
-    self->mesh->triangles->array[i].v3 = 7;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 3;
+    self->mesh.triangles.array[i].v2 = 6;
+    self->mesh.triangles.array[i].v3 = 7;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 
     // back face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 7;
-    self->mesh->triangles->array[i].v2 = 6;
-    self->mesh->triangles->array[i].v3 = 5;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 7;
+    self->mesh.triangles.array[i].v2 = 6;
+    self->mesh.triangles.array[i].v3 = 5;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 7;
-    self->mesh->triangles->array[i].v2 = 5;
-    self->mesh->triangles->array[i].v3 = 4;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 7;
+    self->mesh.triangles.array[i].v2 = 5;
+    self->mesh.triangles.array[i].v3 = 4;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 
     // right face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 4;
-    self->mesh->triangles->array[i].v2 = 5;
-    self->mesh->triangles->array[i].v3 = 1;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 4;
+    self->mesh.triangles.array[i].v2 = 5;
+    self->mesh.triangles.array[i].v3 = 1;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 4;
-    self->mesh->triangles->array[i].v2 = 1;
-    self->mesh->triangles->array[i].v3 = 0;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 4;
+    self->mesh.triangles.array[i].v2 = 1;
+    self->mesh.triangles.array[i].v3 = 0;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 
     // top face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 1;
-    self->mesh->triangles->array[i].v2 = 5;
-    self->mesh->triangles->array[i].v3 = 6;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 1;
+    self->mesh.triangles.array[i].v2 = 5;
+    self->mesh.triangles.array[i].v3 = 6;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 1;
-    self->mesh->triangles->array[i].v2 = 6;
-    self->mesh->triangles->array[i].v3 = 2;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 1;
+    self->mesh.triangles.array[i].v2 = 6;
+    self->mesh.triangles.array[i].v3 = 2;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 
     // bottom face
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 4;
-    self->mesh->triangles->array[i].v2 = 0;
-    self->mesh->triangles->array[i].v3 = 3;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 4;
+    self->mesh.triangles.array[i].v2 = 0;
+    self->mesh.triangles.array[i].v3 = 3;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V1_V2 | TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V1_V2_FAR |
         TRIANGLE_EDGE_V2_V3_FAR;
 
-    i = triangle_index_array_grow(self->mesh->triangles);
-    self->mesh->triangles->array[i].v1 = 4;
-    self->mesh->triangles->array[i].v2 = 3;
-    self->mesh->triangles->array[i].v3 = 7;
-    self->mesh->triangles->array[i].texture = NULL;
-    self->mesh->triangles->array[i].color = player_colors[self->player_index];
-    self->mesh->triangles->array[i].edges =
+    i = triangle_index_array_grow(&self->mesh.triangles);
+    self->mesh.triangles.array[i].v1 = 4;
+    self->mesh.triangles.array[i].v2 = 3;
+    self->mesh.triangles.array[i].v3 = 7;
+    self->mesh.triangles.array[i].texture = NULL;
+    self->mesh.triangles.array[i].color = player_colors[self->player_index];
+    self->mesh.triangles.array[i].edges =
         TRIANGLE_EDGE_V2_V3 | TRIANGLE_EDGE_V3_V1 | TRIANGLE_EDGE_V2_V3_FAR |
         TRIANGLE_EDGE_V3_V1_FAR;
 }
@@ -239,6 +241,7 @@ void player_init(Player *const restrict self, const int8_t player_index,
                 PLAYER_DEFAULT_YAW, PLAYER_DEFAULT_PITCH,
                 (float)self->viewport.width / self->viewport.height);
 
+    mesh_init(&self->mesh, 8, 12);
     player_generate_mesh(self);
 
     self->position.x = PLAYER_START_X + 0.5f;
@@ -263,7 +266,7 @@ void player_destroy(Player *const self) {
     if (self->controller != NULL) {
         controller_set_player_index(self->controller, -1);
     }
-    mesh_destroy(self->mesh);
+    mesh_destroy(&self->mesh);
 }
 
 [[gnu::nonnull(1)]]
@@ -449,17 +452,17 @@ static inline bool player_is_grounded(const Player *const restrict self,
 static inline void player_update_mesh(Player *const self) {
     assert(self != NULL);
 
-    mesh_destroy(self->mesh);
+    mesh_clear(&self->mesh);
     player_generate_mesh(self);
 
     m4f rotation_y_matrix;
     m4f_rotation_y(rotation_y_matrix, self->camera.yaw);
 
-    for (size_t i = 0; i < self->mesh->vertices->length; ++i) {
-        self->mesh->vertices->array[i] =
-            mul_m4f_v3f(rotation_y_matrix, self->mesh->vertices->array[i]).xyz;
-        self->mesh->vertices->array[i] =
-            v3f_add(self->mesh->vertices->array[i], self->position);
+    for (size_t i = 0; i < self->mesh.vertices.length; ++i) {
+        self->mesh.vertices.array[i] =
+            mul_m4f_v3f(rotation_y_matrix, self->mesh.vertices.array[i]).xyz;
+        self->mesh.vertices.array[i] =
+            v3f_add(self->mesh.vertices.array[i], self->position);
     }
 }
 
@@ -527,7 +530,7 @@ void player_render(const Player *const restrict self,
     assert(camera != NULL);
     assert(viewport != NULL);
 
-    mesh_render(self->mesh, camera, viewport);
+    mesh_render(&self->mesh, camera, viewport);
 }
 
 inline void player_rotate(Player *const self, const v2f rotation) {

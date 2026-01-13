@@ -1,13 +1,12 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stddef.h>
 
-#include "controller_array.h"
-#include "vec.h"
+#include "controller_array_defs.h"
+#include "vec_defs.h"
 
-[[gnu::returns_nonnull]]
-ControllerArray *controller_get_connected_controllers(void);
+[[gnu::nonnull]]
+void controller_get_connected_controllers(ControllerArray *const array);
 
 void controller_start_monitor(void);
 

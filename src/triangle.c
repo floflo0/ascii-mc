@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "utils.h"
+#include "vec.h"
 
 Triangle3D *triangle3D_init_v3f(
     const v3f *const restrict v1, const v3f *const restrict v2,

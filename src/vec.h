@@ -1,31 +1,7 @@
 #pragma once
 
 #include "utils.h"
-
-typedef struct {
-    int x, y;
-} v2i;
-
-typedef struct {
-    float x, y;
-} v2f;
-
-typedef struct {
-    int x, y, z;
-} v3i;
-
-typedef struct {
-    float x, y, z;
-} v3f;
-
-typedef union {
-    struct {
-        float x, y, z, w;
-    };
-    v3f xyz;
-} v4f;
-
-typedef float m4f[16];
+#include "vec_defs.h"
 
 [[gnu::nonnull]]
 void mul_m4f_m4f(const m4f mat1, const m4f mat2, m4f output);

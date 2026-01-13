@@ -11,17 +11,21 @@
 
 #include "config.h"
 #include "controller.h"
+#include "controller_array.h"
 #include "event_queue.h"
 // #define LOG_LEVEL_ERROR
 #include "log.h"
 #include "threads.h"
 #include "utils.h"
+#include "vec.h"
 
 #define CONTROLLER_AXIS_MAX 32767
 #define CONTROLLER_AXIS_MIN -32768
 #define CONTROLLER_RUMBLE_DURATION 500  // ms
 
 #define DEVICE_PATH_SIZE 27
+
+#define CONTROLLER_ARRAY_DEFAULT_CAPACITY 4
 
 // Mapping buttons to their code
 #define CONTROLLER_BUTTONS                      \
@@ -522,10 +526,11 @@ static Controller *controller_from_devname(const char *const devname) {
     return NULL;
 }
 
-ControllerArray *controller_get_connected_controllers(void) {
-    sd_device_enumerator *const enumerator = get_device_enumerator();
+void controller_get_connected_controllers(ControllerArray *const array) {
+    assert(array != NULL);
+    controller_array_init(array, CONTROLLER_ARRAY_DEFAULT_CAPACITY);
 
-    ControllerArray *const array = controller_array_create(1);
+    sd_device_enumerator *const enumerator = get_device_enumerator();
 
     for (sd_device *device = sd_device_enumerator_get_device_first(enumerator);
          device != NULL;
@@ -546,8 +551,6 @@ ControllerArray *controller_get_connected_controllers(void) {
     }
 
     sd_device_enumerator_unref(enumerator);
-
-    return array;
 }
 
 [[gnu::nonnull(2)]]

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec.h"
+#include "vec_defs.h"
 
 typedef struct {
     m4f projection_matrix;

@@ -16,7 +16,7 @@
 #endif
 
 void *_malloc_or_exit(location_param const size_t size,
-                      const char *restrict error_message_format, ...) {
+                      const char *const restrict error_message_format, ...) {
     assert(error_message_format != NULL);
     void *const pointer = malloc(size);
     if (pointer == NULL) {
@@ -30,7 +30,8 @@ void *_malloc_or_exit(location_param const size_t size,
     return pointer;
 }
 
-void *_realloc_or_exit(location_param void *restrict pointer, const size_t size,
+void *_realloc_or_exit(location_param void *const restrict pointer,
+                       const size_t size,
                        const char *restrict error_message_format, ...) {
     assert(size > 0);
     assert(error_message_format != NULL);

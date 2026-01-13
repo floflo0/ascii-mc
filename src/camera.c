@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "config.h"
+#include "vec.h"
 
 [[gnu::nonnull]]
 static void camera_update_projection_matrix(Camera *const self) {

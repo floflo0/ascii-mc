@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "vec.h"
+#include "vec_defs.h"
 
 typedef enum : uint8_t {
     COLLISION_AXIS_X_PLUS,

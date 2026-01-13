@@ -1,11 +1,14 @@
 #include "../controller.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "../config.h"
+#include "../controller_array.h"
 #include "../event_queue.h"
 #include "../log.h"
 #include "../utils.h"
+#include "../vec.h"
 #include "int_array.h"
 #include "js.h"
 
@@ -46,7 +49,7 @@ struct _Controller {
 static bool monitor_started = false;
 static ControllerArray *controllers_array = NULL;
 static JS_GamepadArray gamepads_array = JS_NULL;
-static IntArray *gamepad_indexes_array = NULL;
+static IntArray gamepad_indexes_array;
 static int monitor_gamepads_request_id = -1;
 
 [[gnu::nonnull(1)]]
@@ -102,9 +105,9 @@ static void controller_update(void *const data) {
             .controller_event = {.controller = self},
         });
         self->update_request_id = -1;
-        for (size_t i = 0; i < gamepad_indexes_array->length; ++i) {
-            if (gamepad_indexes_array->array[i] == gamepad_index) {
-                int_array_remove(gamepad_indexes_array, i);
+        for (size_t i = 0; i < gamepad_indexes_array.length; ++i) {
+            if (gamepad_indexes_array.array[i] == gamepad_index) {
+                int_array_remove(&gamepad_indexes_array, i);
                 break;
             }
         }
@@ -166,7 +169,7 @@ static Controller *controller_create(const JS_Gamepad gamepad) {
         malloc_or_exit(sizeof(*self), "failed to create controller");
 
     self->gamepad_index = JS_Gamepad_get_index(gamepad);
-    int_array_push(gamepad_indexes_array, self->gamepad_index);
+    int_array_push(&gamepad_indexes_array, self->gamepad_index);
     self->update_request_id = -1;
     self->triggers_as_buttons = JS_Gamepad_get_axes_length(gamepad) == 4;
     memset(self->button_states, false, sizeof(self->button_states));
@@ -187,17 +190,15 @@ static void controller_connect_if_not_null(const JS_Gamepad gamepad) {
     JS_Object_free(gamepad);
 }
 
-ControllerArray *controller_get_connected_controllers(void) {
-    if (gamepad_indexes_array == NULL) {
-        gamepad_indexes_array = int_array_create(1);
-    }
+void controller_get_connected_controllers(ControllerArray *const array) {
+    assert(array != NULL);
     if (controllers_array == NULL) {
-        controllers_array = controller_array_create(1);
+        int_array_init(&gamepad_indexes_array, 1);
+        controllers_array = array;
+        controller_array_init(array, 1);
         gamepads_array = JS_navigator_getGamepads();
         JS_Array_foreach(gamepads_array, controller_connect_if_not_null);
     }
-
-    return controllers_array;
 }
 
 static void controller_connect_if_new(const JS_Gamepad gamepad) {
@@ -207,8 +208,8 @@ static void controller_connect_if_new(const JS_Gamepad gamepad) {
         goto return_;
     }
     const int index = JS_Gamepad_get_index(gamepad);
-    for (size_t i = 0; i < gamepad_indexes_array->length; ++i) {
-        if (index == gamepad_indexes_array->array[i]) goto return_;
+    for (size_t i = 0; i < gamepad_indexes_array.length; ++i) {
+        if (index == gamepad_indexes_array.array[i]) goto return_;
     }
 
     event_queue_push(&(Event){
@@ -248,8 +249,7 @@ void controller_stop_monitor(void) {
     assert(gamepads_array != JS_NULL);
     JS_Object_free(gamepads_array);
     gamepads_array = JS_NULL;
-    array_destroy((Array *)gamepad_indexes_array);
-    gamepad_indexes_array = NULL;
+    array_destroy((Array *)&gamepad_indexes_array);
     monitor_started = false;
 }
 

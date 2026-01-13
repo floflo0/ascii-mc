@@ -1,21 +1,18 @@
 #pragma once
 
 #include "camera_defs.h"
-#include "triangle_index_array.h"
-#include "v3f_array.h"
+#include "mesh_defs.h"
 #include "viewport.h"
 
-typedef struct {
-    V3fArray *vertices;
-    TriangleIndexArray *triangles;
-} Mesh;
-
-[[gnu::returns_nonnull]]
-Mesh *mesh_create(const size_t preallocate_vertices_size,
-                  const size_t preallocate_triangles_size);
+[[gnu::nonnull(1)]]
+void mesh_init(Mesh *const self, const size_t preallocate_vertices_size,
+               const size_t preallocate_triangles_size);
 
 [[gnu::nonnull]]
-void mesh_destroy(Mesh *const mesh);
+void mesh_destroy(const Mesh *const self);
+
+[[gnu::nonnull]]
+void mesh_clear(Mesh *const self);
 
 [[gnu::nonnull]]
 void mesh_render(const Mesh *const restrict self,

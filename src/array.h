@@ -1,43 +1,32 @@
 #pragma once
 
 #include <assert.h>
-#include <stdlib.h>
 
+#include "array_defs.h"
 #include "utils.h"
 
-typedef struct {
-    void *array;
-    size_t length;
-    size_t capacity;
-} Array;
+void array_destroy(const Array *const self);
 
-void array_destroy(Array *const self);
-
-#define DEFINE_ARRAY(name, Name, type)                               \
-    typedef struct {                                                 \
-        type *array;                                                 \
-        size_t length;                                               \
-        size_t capacity;                                             \
-    } Name##Array;                                                   \
-    [[gnu::returns_nonnull]]                                         \
-    Name##Array *name##_array_create(const size_t default_capacity); \
-    [[gnu::nonnull]]                                                 \
-    size_t name##_array_grow(Name##Array *const self);               \
-    [[gnu::nonnull(1)]]                                              \
-    void name##_array_push(Name##Array *const self, type value);     \
-    [[gnu::nonnull(1)]]                                              \
+#define DEFINE_ARRAY(name, Name, type)                           \
+    [[gnu::nonnull(1)]]                                          \
+    void name##_array_init(Name##Array *const self,              \
+                           const size_t default_capacity);       \
+    [[gnu::nonnull]]                                             \
+    size_t name##_array_grow(Name##Array *const self);           \
+    [[gnu::nonnull(1)]]                                          \
+    void name##_array_push(Name##Array *const self, type value); \
+    [[gnu::nonnull(1)]]                                          \
     void name##_array_remove(Name##Array *const self, const size_t index);
 
 #define ARRAY_IMPLEMENTATION(name, Name, type)                                \
-    Name##Array *name##_array_create(const size_t default_capacity) {         \
+    void name##_array_init(Name##Array *const self,                           \
+                           const size_t default_capacity) {                   \
+        assert(self != NULL);                                                 \
         assert(0 < default_capacity);                                         \
-        Name##Array *const self = malloc_or_exit(                             \
-            sizeof(*self), "failed to create a " #Name "Array");              \
         self->array = malloc_or_exit(sizeof(*self->array) * default_capacity, \
                                      "failed to create a " #Name "Array");    \
         self->length = 0;                                                     \
         self->capacity = default_capacity;                                    \
-        return self;                                                          \
     }                                                                         \
                                                                               \
     size_t name##_array_grow(Name##Array *const self) {                       \

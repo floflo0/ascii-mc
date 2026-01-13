@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "texture.h"
-#include "vec.h"
+#include "vec_defs.h"
 
 #define TRIANGLE_EDGE_V1_V2 0x01
 #define TRIANGLE_EDGE_V2_V3 0x02

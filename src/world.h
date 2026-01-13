@@ -7,12 +7,13 @@
 #include "block.h"
 #include "camera_defs.h"
 #include "config.h"
-#include "mesh.h"
+#include "mesh_defs.h"
 #include "viewport.h"
 
 typedef struct {
     int x, z;
-    Mesh *mesh;
+    Mesh mesh;
+    bool mesh_dirty;
 #ifndef __wasm__
     pthread_mutex_t mesh_mutex;
 #endif

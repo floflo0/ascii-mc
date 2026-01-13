@@ -30,7 +30,7 @@ void *_malloc_or_exit(const char *const restrict file, const size_t line,
 [[gnu::nonnull(1, 3, 4, 6)]] [[gnu::returns_nonnull]]
 void *_realloc_or_exit(const char *const restrict file, const size_t line,
                        const char *const restrict function_name,
-                       void *restrict pointer, const size_t size,
+                       void *const restrict pointer, const size_t size,
                        const char *const restrict error_message_format, ...);
 #else
 #define file_and_line_param

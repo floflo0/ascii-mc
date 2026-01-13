@@ -5,13 +5,16 @@
 #include <signal.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "command.h"
 #include "controller.h"
+#include "controller_array.h"
 #include "event_queue.h"
 #include "log.h"
 #include "player.h"
+#include "vec.h"
 #include "window.h"
 #include "world.h"
 
@@ -24,8 +27,9 @@
 #endif
 
 typedef struct {
-    ControllerArray *controllers;
+    ControllerArray controllers;
     Player players[4];
+    uint64_t frame_start_time_microseconds;
     World *world;
     uint8_t controllers_count;
     uint8_t number_players;
@@ -50,13 +54,13 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
 
     event_queue_init();
 
-    game.controllers = controller_get_connected_controllers();
+    controller_get_connected_controllers(&game.controllers);
     controller_start_monitor();
 
     game.number_players = number_players;
     for (uint8_t i = 0; i < number_players; ++i) {
         Controller *const controller =
-            i < game.controllers->length ? game.controllers->array[i] : NULL;
+            i < game.controllers.length ? game.controllers.array[i] : NULL;
         player_init(&game.players[i], i, game.number_players, controller,
                     game.world);
     }
@@ -67,7 +71,7 @@ void game_quit(void) {
         player_destroy(&game.players[i]);
     }
     controller_stop_monitor();
-    controller_array_destroy(game.controllers);
+    controller_array_destroy(&game.controllers);
     event_queue_quit();
     world_destroy(game.world);
     window_quit();
@@ -132,9 +136,9 @@ static inline void game_add_player_command(void) {
     if (game.number_players == 4) return;  // TODO: display error message
 
     Controller *controller = NULL;
-    for (size_t i = 0; i < game.controllers->length; ++i) {
-        if (controller_get_player_index(game.controllers->array[i]) == -1) {
-            controller = game.controllers->array[i];
+    for (size_t i = 0; i < game.controllers.length; ++i) {
+        if (controller_get_player_index(game.controllers.array[i]) == -1) {
+            controller = game.controllers.array[i];
             break;
         }
     }
@@ -346,7 +350,7 @@ static inline void game_hanlde_controller_connect_event(
     Controller *const controller) {
     assert(controller != NULL);
 
-    controller_array_push(game.controllers, controller);
+    controller_array_push(&game.controllers, controller);
     for (int8_t i = 0; i < 4; ++i) {
         Player *const player = &game.players[i];
         if (player->controller == NULL) {
@@ -390,9 +394,9 @@ static inline void game_update(const float delta_time_seconds) {
                 if (player_index != -1) {
                     game.players[player_index].controller = NULL;
                 }
-                for (size_t i = 0; i < game.controllers->length; ++i) {
-                    if (game.controllers->array[i] == controller) {
-                        controller_array_remove(game.controllers, i);
+                for (size_t i = 0; i < game.controllers.length; ++i) {
+                    if (game.controllers.array[i] == controller) {
+                        controller_array_remove(&game.controllers, i);
                         break;
                     }
                 }
@@ -602,13 +606,11 @@ static inline void game_render(const float delta_time_seconds) {
 }
 
 static inline void game_loop(void) {
-    static uint64_t frame_start_time_microseconds = 0;
-
     const uint64_t frame_end_time_microseconds = get_time_microseconds();
     const float delta_time_seconds =
-        (frame_end_time_microseconds - frame_start_time_microseconds) *
+        (frame_end_time_microseconds - game.frame_start_time_microseconds) *
         0.000001f;
-    frame_start_time_microseconds = frame_end_time_microseconds;
+    game.frame_start_time_microseconds = frame_end_time_microseconds;
 
     game_update(delta_time_seconds);
     game_render(delta_time_seconds);
@@ -618,16 +620,18 @@ static inline void game_loop(void) {
         JS_requestAnimationFrame(game_loop);
     }
 #elifdef GAME_MAX_FRAMERATE
-        const uint64_t delta_time_microseconds =
-            get_time_microseconds() - frame_start_time_microseconds;
-        if (delta_time_microseconds < 1000000 / GAME_MAX_FRAMERATE) {
-            usleep((1000000 / GAME_MAX_FRAMERATE) - delta_time_microseconds);
-        }
+    const uint64_t delta_time_microseconds =
+        get_time_microseconds() - game.frame_start_time_microseconds;
+    if (delta_time_microseconds < 1000000 / GAME_MAX_FRAMERATE) {
+        usleep((1000000 / GAME_MAX_FRAMERATE) - delta_time_microseconds);
+    }
 #endif
 }
 
 void game_run(void) {
     assert(game.running);
+
+    game.frame_start_time_microseconds = get_time_microseconds();
 
     log_debugf("game launched");
 #ifndef __wasm__

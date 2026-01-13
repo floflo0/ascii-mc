@@ -3,16 +3,16 @@
 #include "camera_defs.h"
 #include "collision.h"
 #include "controller_defs.h"
-#include "mesh.h"
+#include "mesh_defs.h"
 #include "player_game_mode.h"
-#include "vec.h"
+#include "vec_defs.h"
 #include "viewport.h"
 #include "world.h"
 
 typedef struct {
     Camera camera;
     Controller *controller;
-    Mesh *mesh;
+    Mesh mesh;
     uint64_t last_grounded_time_microseconds;
     v3f position;
     v3f velocity;

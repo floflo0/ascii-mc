@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "player_game_mode.h"
-#include "vec.h"
+#include "vec_defs.h"
 
 typedef enum : uint8_t {
     COMMAND_ADD_PLAYER,

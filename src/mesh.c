@@ -8,6 +8,9 @@
 #include "camera.h"
 #include "config.h"
 #include "triangle3D_array.h"
+#include "triangle_index_array.h"
+#include "v3f_array.h"
+#include "vec.h"
 #include "window.h"
 
 typedef struct {
@@ -15,43 +18,40 @@ typedef struct {
     float d;
 } Plane;
 
-Mesh *mesh_create(const size_t preallocate_vertices_size,
-                  const size_t preallocate_triangles_size) {
-    Mesh *const self = malloc_or_exit(sizeof(*self), "failed to create mesh");
-
-    self->vertices = v3f_array_create(preallocate_vertices_size);
-    self->triangles = triangle_index_array_create(preallocate_triangles_size);
-
-    return self;
+void mesh_init(Mesh *const self, const size_t preallocate_vertices_size,
+               const size_t preallocate_triangles_size) {
+    assert(self != NULL);
+    v3f_array_init(&self->vertices, preallocate_vertices_size);
+    triangle_index_array_init(&self->triangles, preallocate_triangles_size);
 }
 
-void mesh_destroy(Mesh *const self) {
+void mesh_destroy(const Mesh *const self) {
     assert(self != NULL);
-    assert(self->vertices != NULL);
-    assert(self->triangles != NULL);
-    array_destroy((Array *)self->vertices);
-    array_destroy((Array *)self->triangles);
-    free(self);
+    array_destroy((const Array *)&self->vertices);
+    array_destroy((const Array *)&self->triangles);
 }
 
-[[gnu::nonnull]] [[gnu::returns_nonnull]]
-static inline v3f *mesh_get_viewed_vertices(
-    const Mesh *const restrict self, const Camera *const restrict camera) {
+void mesh_clear(Mesh *const self) {
     assert(self != NULL);
-    assert(self->vertices != NULL);
+    self->vertices.length = 0;
+    self->triangles.length = 0;
+}
+
+[[gnu::nonnull]]
+static inline void mesh_get_viewed_vertices(const Mesh *const restrict self,
+                                            const Camera *const restrict camera,
+                                            v3f *const restrict view_vertices) {
+    assert(self != NULL);
     assert(camera != NULL);
+    assert(view_vertices != NULL);
 
     m4f view_matrix;
     camera_get_view_matrix(camera, view_matrix);
 
-    v3f *const view_vertices =
-        malloc_or_exit(sizeof(*view_vertices) * self->vertices->length,
-                       "failed to get viewed vertices");
-    for (size_t i = 0; i < self->vertices->length; ++i) {
+    for (size_t i = 0; i < self->vertices.length; ++i) {
         view_vertices[i] =
-            mul_m4f_v3f(view_matrix, self->vertices->array[i]).xyz;
+            mul_m4f_v3f(view_matrix, self->vertices.array[i]).xyz;
     }
-    return view_vertices;
 }
 
 [[gnu::nonnull(1)]]
@@ -320,21 +320,23 @@ static inline void clip_triangle(const Camera *const restrict camera,
     planes_clip_triangle(planes, 0, triangle, array, arena);
 }
 
-[[gnu::nonnull]] [[gnu::returns_nonnull]]
-static inline Triangle3DArray *mesh_get_viewed_triangles(
+[[gnu::nonnull]]
+static inline void mesh_get_viewed_triangles(
     const Mesh *const restrict self, const Camera *const restrict camera,
-    Triangle3DArena *const restrict arena) {
+    Triangle3DArena *const restrict arena,
+    Triangle3DArray *const restrict viewed_triangles) {
     assert(self != NULL);
     assert(camera != NULL);
     assert(arena != NULL);
+    assert(viewed_triangles != NULL);
 
-    Triangle3DArray *const array =
-        triangle3D_array_create(self->triangles->length);
+    triangle3D_array_init(viewed_triangles, self->triangles.length);
 
-    v3f *view_vertices = mesh_get_viewed_vertices(self, camera);
+    v3f view_vertices[self->vertices.length];
+    mesh_get_viewed_vertices(self, camera, view_vertices);
 
-    for (size_t i = 0; i < self->triangles->length; ++i) {
-        const TriangleIndex *const triangle_index = &self->triangles->array[i];
+    for (size_t i = 0; i < self->triangles.length; ++i) {
+        const TriangleIndex *const triangle_index = &self->triangles.array[i];
         Triangle3D *const triangle = triangle3D_init_v3f(
             &view_vertices[triangle_index->v1],
             &view_vertices[triangle_index->v2],
@@ -343,13 +345,9 @@ static inline Triangle3DArray *mesh_get_viewed_triangles(
             triangle_index->texture, triangle_index->color, arena);
         const v3f triangle_normal = triangle3D_get_normal(triangle);
         if (v3f_dot(triangle->v1.xyz, triangle_normal) < 0.0f) {
-            clip_triangle(camera, triangle, array, arena);
+            clip_triangle(camera, triangle, viewed_triangles, arena);
         }
     }
-
-    free(view_vertices);
-
-    return array;
 }
 
 void mesh_render(const Mesh *const restrict self,
@@ -362,18 +360,18 @@ void mesh_render(const Mesh *const restrict self,
     static const char shade_char[] = {'.', ';', '!'};
 
     Triangle3DArena *const arena =
-        triangle3D_arena_create(2 * self->triangles->length);
+        triangle3D_arena_create(2 * self->triangles.length);
 
-    Triangle3DArray *const viewed_triangles =
-        mesh_get_viewed_triangles(self, camera, arena);
+    Triangle3DArray viewed_triangles;
+    mesh_get_viewed_triangles(self, camera, arena, &viewed_triangles);
 
     m4f camera_rotation_matrix;
     camera_get_rotation_matrix(camera, camera_rotation_matrix);
     const v4f light = mul_m4f_v3f(camera_rotation_matrix,
                                   v3f_normalize((v3f){3.0f, 2.0f, -1.0f}));
 
-    for (size_t j = 0; j < viewed_triangles->length; ++j) {
-        Triangle3D *triangle = viewed_triangles->array[j];
+    for (size_t j = 0; j < viewed_triangles.length; ++j) {
+        Triangle3D *triangle = viewed_triangles.array[j];
         const float triangle_distance_squared =
             min3_float(v3f_norm_squared(triangle->v1.xyz),
                        v3f_norm_squared(triangle->v2.xyz),
@@ -427,6 +425,6 @@ void mesh_render(const Mesh *const restrict self,
         window_render_triangle(triangle);
     }
 
-    array_destroy((Array *)viewed_triangles);
+    array_destroy((Array *)&viewed_triangles);
     triangle3D_arena_destroy(arena);
 }

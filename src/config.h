@@ -95,7 +95,7 @@
 // Debug
 
 #ifdef PROD
-#define GAME_DEFAULT_SHOW_DEBUG_INFO false
+#define GAME_DEFAULT_SHOW_DEBUG_INFO true
 #else
 #define GAME_DEFAULT_SHOW_DEBUG_INFO true
 #endif

@@ -19,7 +19,6 @@
 #include "texture.h"
 #include "threads.h"
 #include "utils.h"
-#include "wasm/js.h"
 
 #define HIDE_CURSOR "\033[?25l"
 #define SHOW_CURSOR "\033[?25h"
@@ -76,6 +75,7 @@ static void get_terminal_size(int *const restrict width,
     assert(height != NULL);
 
     struct winsize window_size;
+    // TODO: use ws_xpixel and ws_ypixel to compute the character ratio
     if (ioctl(WINDOW_FD, TIOCGWINSZ, &window_size)) {
         log_errorf_errno("failed to get the terminal size");
         exit(EXIT_FAILURE);

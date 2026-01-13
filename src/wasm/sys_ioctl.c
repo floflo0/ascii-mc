@@ -1,19 +1,13 @@
 #include <assert.h>
-#include <errno.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "js.h"
 
-int ioctl(int fd, unsigned long op, ...) {
-    if (fd != STDOUT_FILENO) {
-        errno = EBADF;
-        return -1;
-    }
-
-    if (op != TIOCGWINSZ) assert(false && "unsupported op");
+int ioctl([[maybe_unused]] const int fd, const unsigned long op, ...) {
+    assert(fd == STDOUT_FILENO && "unsupported fd");
+    assert(op != TIOCGWINSZ && "unsupported op");
 
     va_list args;
     va_start(args, op);

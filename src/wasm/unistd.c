@@ -43,11 +43,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
     return count;
 }
 
-// void _exit(const int status) {
-//     JS_exit(status);
-// }
-
 char *ttyname([[maybe_unused]] int fd) {
-    // assert(fd == STDOUT_FILENO && "fd not supported");
+    assert(fd == STDOUT_FILENO && "fd not supported");
     return "/dev/pts/1";
 }

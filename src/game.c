@@ -477,16 +477,13 @@ static inline void game_render_debug_info(const float delta_time_seconds) {
              delta_time_seconds * 1000.0f);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
-    snprintf(buffer, sizeof(buffer), "| update: %7.2f ms |",
-             game.update_time);
+    snprintf(buffer, sizeof(buffer), "| update: %7.2f ms |", game.update_time);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
-    snprintf(buffer, sizeof(buffer), "| render: %7.2f ms |",
-             game.render_time);
+    snprintf(buffer, sizeof(buffer), "| render: %7.2f ms |", game.render_time);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
-    snprintf(buffer, sizeof(buffer), "| total: %8.2f ms |",
-             game.total_time);
+    snprintf(buffer, sizeof(buffer), "| total: %8.2f ms |", game.total_time);
     window_render_string(position, buffer, COLOR_WHITE, WINDOW_Z_BUFFER_FRONT);
     ++position.y;
     window_render_string(position, "+--------------------+", COLOR_WHITE,

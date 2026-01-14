@@ -597,7 +597,7 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
 #ifdef RENDER_WIREFRAME
 [[gnu::nonnull]]
 static inline void window_render_triangle_wireframe(
-                                             const Triangle3D *const triangle) {
+    const Triangle3D *const triangle) {
     assert(window.is_init);
     assert(triangle != NULL);
     window_render_line(triangle->v1.xyz, triangle->v2.xyz, triangle->color);

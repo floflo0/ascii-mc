@@ -200,7 +200,7 @@ export class Wasm {
                 console.assert(objectIndex != JS_NULL);
                 this.jsObjectsMemory.remove(objectIndex);
             },
-            JS_write: (bufferPtr: Ptr, count: SizeT) => {
+            JS_write: (bufferPtr: Ptr, count: SizeT): void => {
                 this.terminal.setContent(
                     this.textDecoder.decode(this.memoryView.subarray(
                         bufferPtr,
@@ -208,11 +208,11 @@ export class Wasm {
                     )),
                 );
             },
-            JS_read_char: () => this.terminal.readChar(),
+            JS_read_char: (): number => this.terminal.readChar(),
             JS_get_memory_size: (): SizeT => this.memory.buffer.byteLength,
-            JS_get_terminal_width: (): number => this.terminal.width,
-            JS_get_terminal_height: (): number => this.terminal.height,
-            _exit: (status: number) => {
+            JS_get_terminal_width: (): number => this.terminal.getWidth(),
+            JS_get_terminal_height: (): number => this.terminal.getHeight(),
+            _exit: (status: number): void => {
                 throw new Exit(status);
             },
         };

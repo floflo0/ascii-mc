@@ -21,91 +21,26 @@
     --foreground: var(--white);
 }
 
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
 body {
     background: var(--background);
     color: var(--foreground);
+    margin: 0;
 }
 
-.terminal {
+#terminal {
+    width: 100%;
+    height: 100%;
+    display: block;
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-    margin: 0;
-    font-size: 16px;
-    font-family: Terminus, 'Ubuntu Mono', monospace;
-    line-height: 16px;
-    font-weight: bold;
     cursor: none;
     overflow: hidden;
-}
-
-.measure {
-    position: absolute;
-    opacity: 0;
-}
-
-.color-red {
-    color: var(--red);
-}
-
-.color-red {
-    color: var(--red);
-}
-
-.color-green {
-    color: var(--green);
-}
-
-.color-yellow {
-    color: var(--yellow);
-}
-
-.color-blue {
-    color: var(--blue);
-}
-
-.color-magenta {
-    color: var(--magenta);
-}
-
-.color-cyan {
-    color: var(--cyan);
-}
-
-.color-white {
-    color: var(--white);
-}
-
-.color-bright-black {
-    color: var(--bright-black);
-}
-
-.color-bright-red {
-    color: var(--bright-red);
-}
-
-.color-bright-green {
-    color: var(--bright-green);
-}
-
-.color-bright-yellow {
-    color: var(--bright-yellow);
-}
-
-.color-bright-blue {
-    color: var(--bright-blue);
-}
-
-.color-bright-magenta {
-    color: var(--bright-magenta);
-}
-
-.color-bright-cyan {
-    color: var(--bright-cyan);
-}
-
-.color-bright-white {
-    color: var(--bright-white);
 }

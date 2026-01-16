@@ -462,7 +462,7 @@ static inline void game_render_debug_info(const float delta_time_seconds) {
                          WINDOW_Z_BUFFER_FRONT);
     ++position.y;
 #ifdef PROD
-    window_render_string(position, "| prod build         |", COLOR_WHITE,
+    window_render_string(position, "| release build      |", COLOR_WHITE,
                          WINDOW_Z_BUFFER_FRONT);
 #else
     window_render_string(position, "| debug build        |", COLOR_WHITE,

@@ -47,13 +47,13 @@ export class Terminal {
         let y = this.cellHeight + this.paddingY;
         let text = '';
         for (let i = 0; i < content.length; ++i) {
-            if (content[i] == '\x1b') {
-                console.assert(content[i + 1] == '[');
+            if (content[i] === '\x1b') {
+                console.assert(content[i + 1] === '[');
                 i += 2;
                 let code = '';
-                while (content[i] != 'm' && content[i] != 'l' &&
-                       content[i] != 'h' && content[i] != 'H' &&
-                       content[i] != 'i') {
+                while (content[i] !== 'm' && content[i] !== 'l' &&
+                       content[i] !== 'h' && content[i] !== 'H' &&
+                       content[i] !== 'i') {
                     code += content[i++];
                 }
                 if (content[i] === 'm') {
@@ -64,7 +64,6 @@ export class Terminal {
                 }
                 continue;
             }
-
             text += content[i];
             ++lineVisibleCharatersCount;
             if (lineVisibleCharatersCount === this.width) {

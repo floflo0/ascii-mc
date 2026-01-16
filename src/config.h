@@ -9,13 +9,8 @@
 
 #define CHARACTER_RATIO (8.0f / 16.0f)
 
-#ifndef __wasm__
-#define CHUNK_SIZE 16  // m
-#else
-#define CHUNK_SIZE 8  // m
-#endif
-#define CHUNK_HEIGHT 256  // m
-
+#define CHUNK_SIZE 16                            // m
+#define CHUNK_HEIGHT 256                         // m
 #define CHUNK_GENERATION_MIN_TERRAIN_HEIGHT 60   // m
 #define CHUNK_GENERATION_MAX_TERRAIN_HEIGHT 170  // m
 #define CHUNK_GENERATION_TERRAIN_HEIGHT_NOISE_FREQUENCY 0.005f
@@ -33,16 +28,17 @@
 #define CHUNK_GENERATION_MIN_SNOW_HEIGHT_NOISE_FREQUENCY 0.1f
 #define CHUNK_GENERATION_MIN_SNOW_HEIGHT_NOISE_DEPTH 1
 
+#define WORLD_SIZE 6250  // chunks
 #ifndef __wasm__
-#define WORLD_SIZE 6250          // chunks
 #define WORLD_RENDER_DISTANCE 6  // chunks
 #else
-#define WORLD_SIZE 12500         // chunks
 #define WORLD_RENDER_DISTANCE 3  // chunks
 #endif
 #define WORLD_LOAD_DISTANCE (WORLD_RENDER_DISTANCE + 1)
 #define WORLD_RENDER_THREADS_NUMBER 18
+#ifndef __wasm__
 // #define WORLD_RENDER_SCHEDULER_DYNAMIC
+#endif
 
 #define CAMERA_FOV RAD(60.0f /* deg */)
 #define CAMERA_Z_NEAR 0.01f
@@ -190,6 +186,9 @@ static_assert(WORLD_LOAD_DISTANCE >= WORLD_RENDER_DISTANCE + 1);
 static_assert(0 < WORLD_RENDER_DISTANCE);
 STATIC_ASSERT_IS_INTEGER(WORLD_RENDER_THREADS_NUMBER);
 static_assert(0 < WORLD_RENDER_THREADS_NUMBER);
+#if defined(WORLD_RENDER_SCHEDULER_DYNAMIC) && defined(__wasm__)
+#warm "WORLD_RENDER_SCHEDULER_DYNAMIC has no effect in wasm version"
+#endif
 
 static_assert(0 < CAMERA_FOV && CAMERA_FOV < RAD(180.0f /* deg */));
 static_assert(0.0f < CAMERA_Z_NEAR);

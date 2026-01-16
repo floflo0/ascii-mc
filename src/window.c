@@ -290,9 +290,21 @@ void window_update(void) {
 
 void window_clear(void) {
     assert(window.is_init);
+#ifdef __wasm__
+    const Pixel pixel = {
+        .z = FLT_MAX,
+        .chr = WINDOW_CLEAR_CHAR,
+        .color = WINDOW_CLEAR_COLOR,
+    };
+    Pixel *const pixels = window.pixels;
+#endif
     const size_t window_size = window.width * window.height;
     for (size_t i = 0; i < window_size; ++i) {
+#ifndef __wasm__
         window_set_pixel(i, WINDOW_CLEAR_CHAR, WINDOW_CLEAR_COLOR, FLT_MAX);
+#else
+        pixels[i] = pixel;
+#endif
     }
 }
 

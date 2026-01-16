@@ -256,7 +256,7 @@ void controller_stop_monitor(void) {
 #ifndef PROD
 const char *controller_get_name(const Controller *const self) {
     assert(self != NULL);
-    static char controller_id[64];
+    static char controller_id[128];
     JS_GamepadArray array = gamepads_array;
     if (gamepads_array == JS_NULL) array = JS_navigator_getGamepads();
     const JS_Gamepad gamepad = JS_GamepadArray_get(array, self->gamepad_index);

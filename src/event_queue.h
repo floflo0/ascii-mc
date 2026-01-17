@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "event.h"
+#include "event_defs.h"
 
 void event_queue_init(void);
 

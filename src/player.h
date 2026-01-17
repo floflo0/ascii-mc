@@ -2,7 +2,7 @@
 
 #include "camera_defs.h"
 #include "collision.h"
-#include "controller_defs.h"
+#include "gamepad_defs.h"
 #include "mesh_defs.h"
 #include "player_game_mode.h"
 #include "vec_defs.h"
@@ -11,7 +11,7 @@
 
 typedef struct {
     Camera camera;
-    Controller *controller;
+    Gamepad *gamepad;
     Mesh mesh;
     uint64_t last_grounded_time_microseconds;
     v3f position;
@@ -30,7 +30,7 @@ typedef struct {
 [[gnu::nonnull(1, 5)]]
 void player_init(Player *const restrict self, const int8_t player_index,
                  const uint8_t number_players,
-                 Controller *const restrict controller,
+                 Gamepad *const restrict gamepad,
                  World *const restrict world);
 
 [[gnu::nonnull]]

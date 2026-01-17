@@ -9,8 +9,8 @@
 #include <string.h>
 
 #include "command.h"
-#include "controller.h"
-#include "controller_array.h"
+#include "gamepad.h"
+#include "gamepad_array.h"
 #include "event_queue.h"
 #include "log.h"
 #include "player.h"
@@ -27,14 +27,13 @@
 #endif
 
 typedef struct {
-    ControllerArray controllers;
+    GamepadArray gamepads;
     Player players[4];
     uint64_t frame_start_time_microseconds;
     float update_time;
     float render_time;
     float total_time;
     World *world;
-    uint8_t controllers_count;
     uint8_t number_players;
     bool running;
     bool show_debug_info;
@@ -57,15 +56,12 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
 
     event_queue_init();
 
-    controller_get_connected_controllers(&game.controllers);
-    controller_start_monitor();
+    gamepad_init();
+    gamepad_array_init(&game.gamepads, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
 
     game.number_players = number_players;
     for (uint8_t i = 0; i < number_players; ++i) {
-        Controller *const controller =
-            i < game.controllers.length ? game.controllers.array[i] : NULL;
-        player_init(&game.players[i], i, game.number_players, controller,
-                    game.world);
+        player_init(&game.players[i], i, game.number_players, NULL, game.world);
     }
 }
 
@@ -73,8 +69,8 @@ void game_quit(void) {
     for (uint8_t i = 0; i < game.number_players; ++i) {
         player_destroy(&game.players[i]);
     }
-    controller_stop_monitor();
-    controller_array_destroy(&game.controllers);
+    gamepad_array_destroy(&game.gamepads);
+    gamepad_quit();
     event_queue_quit();
     world_destroy(game.world);
     window_quit();
@@ -87,7 +83,7 @@ static inline void game_handle_button_down_event(
     assert(button_down_event != NULL);
 
     switch (button_down_event->button) {
-        case CONTROLLER_BUTTON_ZL: {
+        case GAMEPAD_BUTTON_ZL: {
             const Player *const player =
                 &game.players[button_down_event->player_index];
             player_place_block(player, game.players, game.number_players,
@@ -95,32 +91,32 @@ static inline void game_handle_button_down_event(
             break;
         }
 
-        case CONTROLLER_BUTTON_ZR: {
+        case GAMEPAD_BUTTON_ZR: {
             const Player *const player =
                 &game.players[button_down_event->player_index];
             player_break_block(player, game.world);
             break;
         }
 
-        case CONTROLLER_BUTTON_R:
+        case GAMEPAD_BUTTON_R:
             game.world->place_block++;
             if (game.world->place_block == BLOCK_TYPE_COUNT) {
                 game.world->place_block = 1;
             }
             break;
 
-        case CONTROLLER_BUTTON_L:
+        case GAMEPAD_BUTTON_L:
             game.world->place_block--;
             if (game.world->place_block == 0) {
                 game.world->place_block = BLOCK_TYPE_COUNT - 1;
             }
             break;
 
-        case CONTROLLER_BUTTON_HOME:
+        case GAMEPAD_BUTTON_HOME:
             game.running = false;
             break;
 
-        case CONTROLLER_BUTTON_PLUS:
+        case GAMEPAD_BUTTON_PLUS:
             game.show_debug_info = !game.show_debug_info;
             break;
 
@@ -138,17 +134,17 @@ static inline void game_handle_button_up_event(
 static inline void game_add_player_command(void) {
     if (game.number_players == 4) return;  // TODO: display error message
 
-    Controller *controller = NULL;
-    for (size_t i = 0; i < game.controllers.length; ++i) {
-        if (controller_get_player_index(game.controllers.array[i]) == -1) {
-            controller = game.controllers.array[i];
+    Gamepad *gamepad = NULL;
+    for (size_t i = 0; i < game.gamepads.length; ++i) {
+        if (gamepad_get_player_index(game.gamepads.array[i]) == -1) {
+            gamepad = game.gamepads.array[i];
             break;
         }
     }
 
     const uint8_t new_number_players = game.number_players + 1;
     player_init(&game.players[game.number_players], game.number_players,
-                new_number_players, controller, game.world);
+                new_number_players, gamepad, game.world);
     for (uint8_t i = 0; i < game.number_players; ++i) {
         player_update_viewport(&game.players[i], new_number_players);
     }
@@ -271,7 +267,7 @@ static inline void game_handle_char_event(const CharEvent *const char_event) {
             }
             break;
 
-        case CONTROLLER_BUTTON_L:
+        case CHAR_EVENT_KEY_T:
             game.world->place_block--;
             if (game.world->place_block == 0) {
                 game.world->place_block = BLOCK_TYPE_COUNT - 1;
@@ -349,18 +345,18 @@ static inline void game_handle_resize_event(void) {
 }
 
 [[gnu::nonnull]]
-static inline void game_hanlde_controller_connect_event(
-    Controller *const controller) {
-    assert(controller != NULL);
+static inline void game_hanlde_gamepad_connect_event(
+    Gamepad *const gamepad) {
+    assert(gamepad != NULL);
 
-    controller_array_push(&game.controllers, controller);
+    gamepad_array_push(&game.gamepads, gamepad);
     for (int8_t i = 0; i < 4; ++i) {
         Player *const player = &game.players[i];
-        if (player->controller == NULL) {
-            player->controller = controller;
-            controller_set_player_index(controller, i);
-            log_debugf("assign controller '%s' to player %d",
-                       controller_get_name(controller), i);
+        if (player->gamepad == NULL) {
+            player->gamepad = gamepad;
+            gamepad_set_player_index(gamepad, i);
+            log_debugf("assign gamepad '%s' to player %d",
+                       gamepad_get_name(gamepad), i);
             break;
         }
     }
@@ -368,6 +364,7 @@ static inline void game_hanlde_controller_connect_event(
 
 static inline void game_update(const float delta_time_seconds) {
     window_update();
+    gamepad_update();
 
     while (!event_queue_is_empty()) {
         const Event *const event = event_queue_get();
@@ -384,26 +381,23 @@ static inline void game_update(const float delta_time_seconds) {
                 game_handle_char_event(&event->char_event);
                 break;
 
-            case EVENT_TYPE_CONTROLLER_CONNECT:
-                game_hanlde_controller_connect_event(
-                    event->controller_event.controller);
+            case EVENT_TYPE_GAMEPAD_CONNECT:
+                game_hanlde_gamepad_connect_event(event->gamepad_event.gamepad);
                 break;
 
-            case EVENT_TYPE_CONTROLLER_DISCONNECT: {
-                Controller *const controller =
-                    event->controller_event.controller;
-                const int8_t player_index =
-                    controller_get_player_index(controller);
+            case EVENT_TYPE_GAMEPAD_DISCONNECT: {
+                Gamepad *const gamepad = event->gamepad_event.gamepad;
+                const int8_t player_index = gamepad_get_player_index(gamepad);
                 if (player_index != -1) {
-                    game.players[player_index].controller = NULL;
+                    game.players[player_index].gamepad = NULL;
                 }
-                for (size_t i = 0; i < game.controllers.length; ++i) {
-                    if (game.controllers.array[i] == controller) {
-                        controller_array_remove(&game.controllers, i);
+                for (size_t i = 0; i < game.gamepads.length; ++i) {
+                    if (game.gamepads.array[i] == gamepad) {
+                        gamepad_array_remove(&game.gamepads, i);
                         break;
                     }
                 }
-                controller_destroy(controller);
+                gamepad_destroy(gamepad);
                 break;
             }
 
@@ -419,31 +413,31 @@ static inline void game_update(const float delta_time_seconds) {
 
     for (uint8_t i = 0; i < game.number_players; ++i) {
         Player *const player = &game.players[i];
-        const Controller *const controller = player->controller;
+        const Gamepad *const gamepad = player->gamepad;
 
-        if (controller == NULL) continue;
+        if (gamepad == NULL) continue;
 
-        const v2f left_stick_value =
-            controller_get_stick(controller, CONTROLLER_STICK_LEFT);
+        const v2f left_stick_value = gamepad_get_stick(gamepad,
+                                                       GAMEPAD_STICK_LEFT);
         player->input_velocity.x +=
             left_stick_value.x * PLAYER_MOVEMENT_SPEED * delta_time_seconds;
         player->input_velocity.z += left_stick_value.y * -1.0f *
                                     PLAYER_MOVEMENT_SPEED * delta_time_seconds;
 
         const v2f right_stick_value =
-            v2f_mul(controller_get_stick(controller, CONTROLLER_STICK_RIGHT),
+            v2f_mul(gamepad_get_stick(gamepad, GAMEPAD_STICK_RIGHT),
                     -1.0f * CAMERA_SENSITIVITY * delta_time_seconds);
         player_rotate(player, right_stick_value);
 
         if (player->game_mode == PLAYER_GAME_MODE_SURVIVAL) {
-            if (controller_get_button(controller, CONTROLLER_BUTTON_A)) {
+            if (gamepad_get_button(gamepad, GAMEPAD_BUTTON_A)) {
                 player_jump(player);
             }
         } else {
             player->input_velocity.y +=
                 PLAYER_MOVEMENT_SPEED * delta_time_seconds *
-                (controller_get_button(controller, CONTROLLER_BUTTON_A) -
-                 controller_get_button(controller, CONTROLLER_BUTTON_B));
+                (gamepad_get_button(gamepad, GAMEPAD_BUTTON_A) -
+                 gamepad_get_button(gamepad, GAMEPAD_BUTTON_B));
         }
     }
 

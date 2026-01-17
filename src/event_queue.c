@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "controller.h"
+#include "gamepad.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -46,9 +46,9 @@ void event_queue_quit(void) {
     while (event_queue.first != NULL) {
         EventQueueNode *const first = event_queue.first;
         event_queue.first = event_queue.first->next;
-        if (first->event.type == EVENT_TYPE_CONTROLLER_CONNECT ||
-            first->event.type == EVENT_TYPE_CONTROLLER_DISCONNECT) {
-            controller_destroy(first->event.controller_event.controller);
+        if (first->event.type == EVENT_TYPE_GAMEPAD_CONNECT ||
+            first->event.type == EVENT_TYPE_GAMEPAD_DISCONNECT) {
+            gamepad_destroy(first->event.gamepad_event.gamepad);
         }
         free(first);
     }

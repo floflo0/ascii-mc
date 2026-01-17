@@ -22,7 +22,7 @@ else
 	CC := gcc
 endif
 
-LIBS := libevdev libsystemd
+LIBS := sdl3
 CFLAGS +=                                \
 	-std=gnu23                           \
 	-Wall                                \
@@ -46,7 +46,7 @@ ASSETS_DIR := assets
 OBJS := $(patsubst    \
 	$(SRC_DIR)/%.c,   \
 	$(BUILD_DIR)/%.o, \
-	$(filter-out $(SRC_DIR)/controller-wasm.c, $(wildcard $(SRC_DIR)/*.c)))
+	$(wildcard $(SRC_DIR)/*.c))
 TEXTURE_C_FILES := $(patsubst $(ASSETS_DIR)/%.ppm,$(BUILD_DIR)/%.c,$(wildcard $(ASSETS_DIR)/*.ppm))
 TEXTURE_OBJS := $(patsubst $(ASSETS_DIR)/%.ppm,$(BUILD_DIR)/%.o,$(wildcard $(ASSETS_DIR)/*.ppm))
 EXEC := $(BUILD_DIR)/$(NAME)
@@ -54,7 +54,7 @@ EXEC := $(BUILD_DIR)/$(NAME)
 WASM_CC := clang
 WASM_BUILD_DIR := $(BASE_BUILD_DIR)/wasm/$(BUILD_TYPE)
 WASM_SRCS := $(filter-out   \
-	$(SRC_DIR)/controller-linux.c \
+	$(SRC_DIR)/gamepad.c \
 	$(SRC_DIR)/threads.c,   \
 	$(wildcard $(SRC_DIR)/*c)) $(SRC_DIR)/wasm/*.c $(TEXTURE_C_FILES)
 

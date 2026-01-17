@@ -10,7 +10,7 @@
 
 #include "camera.h"
 #include "config.h"
-#include "controller.h"
+#include "gamepad.h"
 #include "log.h"
 #include "mesh.h"
 #include "triangle_index_array.h"
@@ -204,7 +204,7 @@ static inline void player_generate_mesh(Player *const self) {
 
 void player_init(Player *const restrict self, const int8_t player_index,
                  const uint8_t number_players,
-                 Controller *const restrict controller,
+                 Gamepad *const restrict gamepad,
                  World *const restrict world) {
     assert(self != NULL);
     assert(world != NULL);
@@ -223,9 +223,9 @@ void player_init(Player *const restrict self, const int8_t player_index,
 
     self->game_mode = PLAYER_DEFAULT_GAME_MODE;
 
-    self->controller = controller;
-    if (controller != NULL)
-        controller_set_player_index(controller, self->player_index);
+    self->gamepad = gamepad;
+    if (gamepad != NULL)
+        gamepad_set_player_index(gamepad, self->player_index);
 
     self->last_grounded_time_microseconds = 0;
     self->can_jump = false;
@@ -263,8 +263,8 @@ void player_init(Player *const restrict self, const int8_t player_index,
 
 void player_destroy(Player *const self) {
     assert(self != NULL);
-    if (self->controller != NULL) {
-        controller_set_player_index(self->controller, -1);
+    if (self->gamepad != NULL) {
+        gamepad_set_player_index(self->gamepad, -1);
     }
     mesh_destroy(&self->mesh);
 }

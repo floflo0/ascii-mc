@@ -24,9 +24,6 @@ First you can configure the game from [config.h](./src/config.h). More
 particularly, the character ratio of the font in your terminal, other wise, the
 game may be squished.
 
-You may also need to change the buttons code for your controller in
-[controller.c](./src/controller.c).
-
 Then, to build the project in release mode:
 
 ```sh

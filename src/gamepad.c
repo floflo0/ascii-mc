@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 #include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 
 #include "config.h"
 #include "event_queue.h"
@@ -37,8 +39,12 @@ struct _Gamepad {
 };
 
 static GamepadArray gamepad_array;
+static pthread_t thread;
 
-void gamepad_init(void) {
+/**
+ * TODO: document
+ */
+static inline void gamepad_init_internal(void) {
     gamepad_array_init(&gamepad_array, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
 
 #if !defined(PROD) && !defined(LOG_LEVEL_ERROR)
@@ -53,12 +59,6 @@ void gamepad_init(void) {
                (get_time_microseconds() - start) * 0.001f);
     assert(SDL_JoystickEventsEnabled());
     assert(SDL_GamepadEventsEnabled());
-}
-
-void gamepad_quit(void) {
-    log_debugf("quit SDL");
-    SDL_Quit();
-    gamepad_array_destroy(&gamepad_array);
 }
 
 #ifndef PROD
@@ -265,7 +265,6 @@ static inline void handle_gamepad_removed_event(
         assert(gamepad != NULL);
         SDL_Gamepad *const sdl_gamepad = gamepad->sdl_gamepad;
         if (SDL_GetGamepadID(sdl_gamepad) == joystick_id) {
-            gamepad_array_remove(&gamepad_array, i);
             event_queue_push(
                 &GAMEPAD_EVENT(EVENT_TYPE_GAMEPAD_DISCONNECT, gamepad));
             return;
@@ -273,9 +272,17 @@ static inline void handle_gamepad_removed_event(
     }
 }
 
-void gamepad_update(void) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
+/**
+ * TODO: document
+ */
+static void gamepad_update_internal(void) {
+    for (;;) {
+        SDL_Event event;
+        if (!SDL_WaitEvent(&event)) {
+            log_errorf("failed to wait for an event: %s", SDL_GetError());
+            exit(EXIT_FAILURE);
+        }
+
         switch (event.type) {
 #ifndef PROD
             // Ignore those events
@@ -324,6 +331,64 @@ void gamepad_update(void) {
     }
 }
 
+/**
+ * TODO: document
+ */
+static void gamepad_quit_internal([[gnu::unused]] void *_data) {
+    log_debugf("quit SDL");
+    SDL_Quit();
+    gamepad_array_destroy(&gamepad_array);
+}
+
+static void set_thread_cancel_state(const int state) {
+    assert(state == PTHREAD_CANCEL_ENABLE || state == PTHREAD_CANCEL_DISABLE);
+    const int return_code = pthread_setcancelstate(state, NULL);
+    if (return_code != 0) {
+        log_errorf("failed to set cancel state for gamepad thread: %s",
+                   strerror(return_code));
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * TODO: document
+ */
+static void *gamepad_thread([[gnu::unused]] void *const _data) {
+    set_thread_cancel_state(PTHREAD_CANCEL_DISABLE);
+    pthread_cleanup_push(gamepad_quit_internal, NULL);
+    gamepad_init_internal();
+    set_thread_cancel_state(PTHREAD_CANCEL_ENABLE);
+    pthread_testcancel();
+    gamepad_update_internal();
+    pthread_cleanup_pop(1);
+    return NULL;
+}
+
+void gamepad_init(void) {
+    const int return_code = pthread_create(&thread, NULL, gamepad_thread, NULL);
+    if (return_code < 0) {
+        log_errorf("failed to create gamepad thread: %s",
+                   strerror(-return_code));
+        exit(EXIT_FAILURE);
+    }
+}
+
+void gamepad_quit(void) {
+    int return_code;
+    return_code = pthread_cancel(thread);
+    if (return_code < 0) {
+        log_errorf("failed to cancel gamepad thread: %s",
+                   strerror(-return_code));
+        exit(EXIT_FAILURE);
+    }
+
+    return_code = pthread_join(thread, NULL);
+    if (return_code < 0) {
+        log_errorf("failed to join gamepad thread: %s", strerror(-return_code));
+        exit(EXIT_FAILURE);
+    }
+}
+
 const char *gamepad_get_name(const Gamepad *const self) {
     assert(self != NULL);
     assert(self->sdl_gamepad != NULL);
@@ -352,6 +417,11 @@ void gamepad_destroy(Gamepad *const self) {
     assert(self != NULL);
     assert(self->sdl_gamepad != NULL);
     log_debugf("disconnect gamepad '%s'", gamepad_get_name(self));
+    for (size_t i = 0; i < gamepad_array.length; ++i) {
+        if (gamepad_array.array[i] == self) {
+            gamepad_array_remove(&gamepad_array, i);
+        }
+    }
     SDL_CloseGamepad(self->sdl_gamepad);
     free(self);
 }

@@ -15,10 +15,14 @@ void gamepad_init(void);
  */
 void gamepad_quit(void);
 
+#ifdef __wasm__
 /**
  * TODO: document
  */
 void gamepad_update(void);
+#else
+#define gamepad_update()
+#endif
 
 /**
  * TODO: document

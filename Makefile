@@ -35,7 +35,10 @@ CFLAGS +=                                \
 ifeq ($(BUILD_TYPE), release)
 	CFLAGS += -DPROD -DNDEBUG -O3 -ffast-math -flto=auto -march=native
 else ifeq ($(BUILD_TYPE), debug)
-	CFLAGS += -ggdb -fsanitize=unreachable -fsanitize=address -fsanitize=leak
+	CFLAGS += -ggdb
+	ifeq ($(PLATFORM), linux-x86_64)
+		CFLAGS += -fsanitize=unreachable -fsanitize=address -fsanitize=leak
+	endif
 endif
 
 LDFLAGS := $(shell pkg-config --libs $(LIBS)) -lm -lpthread
@@ -53,9 +56,9 @@ EXEC := $(BUILD_DIR)/$(NAME)
 
 WASM_CC := clang
 WASM_BUILD_DIR := $(BASE_BUILD_DIR)/wasm/$(BUILD_TYPE)
-WASM_SRCS := $(filter-out   \
-	$(SRC_DIR)/gamepad.c \
-	$(SRC_DIR)/threads.c,   \
+WASM_SRCS := $(filter-out \
+	$(SRC_DIR)/gamepad.c  \
+	$(SRC_DIR)/threads.c, \
 	$(wildcard $(SRC_DIR)/*c)) $(SRC_DIR)/wasm/*.c $(TEXTURE_C_FILES)
 
 ifeq ($(PLATFORM), wasm)

@@ -36,8 +36,7 @@ int8_t gamepad_get_player_index(const Gamepad *const self);
  * TODO: document
  */
 [[gnu::nonnull(1)]]
-void gamepad_set_player_index(Gamepad *const self,
-                                 const int8_t player_index);
+void gamepad_set_player_index(Gamepad *const self, const int8_t player_index);
 
 /**
  * Destroy a gamepad structure.

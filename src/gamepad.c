@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "event_queue.h"
+#include "gamepad_array.h"
 #include "log.h"
 #include "utils.h"
 #include "vec.h"
@@ -31,22 +32,33 @@
 
 struct _Gamepad {
     SDL_Gamepad *sdl_gamepad;
+    int8_t player_index;
     bool can_rumble;
 };
 
+static GamepadArray gamepad_array;
+
 void gamepad_init(void) {
+    gamepad_array_init(&gamepad_array, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
+
+#if !defined(PROD) && !defined(LOG_LEVEL_ERROR)
+    const uint64_t start = get_time_microseconds();
+#endif
     if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
         log_errorf("failed to initialized SDL gamepad subsystem: %s",
                    SDL_GetError());
         exit(EXIT_FAILURE);
     }
+    log_debugf("initialized SDL gamepad subsystem in %f",
+               (get_time_microseconds() - start) * 0.001f);
+    assert(SDL_JoystickEventsEnabled());
     assert(SDL_GamepadEventsEnabled());
-    log_debugf("initialized SDL gamepad subsystem");
 }
 
 void gamepad_quit(void) {
     log_debugf("quit SDL");
     SDL_Quit();
+    gamepad_array_destroy(&gamepad_array);
 }
 
 #ifndef PROD
@@ -55,8 +67,8 @@ void gamepad_quit(void) {
  */
 [[gnu::nonnull(1, 3)]]
 static void gamepad_enumerate_properties(void *const restrict data,
-                                            const SDL_PropertiesID props,
-                                            const char *const restrict name) {
+                                         const SDL_PropertiesID props,
+                                         const char *const restrict name) {
     assert(data != NULL);
     assert(name != NULL);
     Gamepad *const self = (Gamepad *)data;
@@ -94,9 +106,7 @@ static void gamepad_enumerate_properties(void *const restrict data,
 /**
  * TODO: document
  */
-[[gnu::returns_nonnull]]
-static Gamepad *gamepad_from_joystick_id(
-    const SDL_JoystickID joystick_id) {
+static Gamepad *gamepad_from_joystick_id(const SDL_JoystickID joystick_id) {
     assert(joystick_id != 0);
     assert(SDL_IsGamepad(joystick_id));
     Gamepad *self = malloc_or_exit(sizeof(*self), "failed to create gamepad");
@@ -104,8 +114,11 @@ static Gamepad *gamepad_from_joystick_id(
     self->sdl_gamepad = SDL_OpenGamepad(joystick_id);
     if (self->sdl_gamepad == NULL) {
         log_errorf("failed to open sdl gamepad: %s", SDL_GetError());
-        exit(EXIT_FAILURE);
+        free(self);
+        return NULL;
     }
+
+    self->player_index = -1;
 
     const SDL_PropertiesID properties =
         SDL_GetGamepadProperties(self->sdl_gamepad);
@@ -126,7 +139,7 @@ static Gamepad *gamepad_from_joystick_id(
 
     log_debugf("connect to gamepad '%s'", gamepad_get_name(self));
 
-#ifdef GAMEPAD_RUMBLE_ONE_CONNECTION
+#ifdef GAMEPAD_RUMBLE_ON_CONNECTION
     gamepad_rumble(self);
 #endif
 
@@ -184,46 +197,105 @@ static void handle_button_event(const SDL_JoystickID joystick_id,
     });
 }
 
-void gamepad_update(void) {
-    SDL_UpdateGamepads();
+/**
+ * TODO: document
+ */
+static inline void handle_gamepad_axis_motion_event(
+    const SDL_JoystickID joystick_id, const SDL_GamepadAxis axis,
+    const int16_t axis_value) {
+    assert(joystick_id != 0);
+    if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER) {
+        if (axis_value == GAMEPAD_AXIS_MAX) {
+            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_DOWN,
+                                GAMEPAD_BUTTON_ZL);
+        } else if (axis_value == 0) {
+            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_UP,
+                                GAMEPAD_BUTTON_ZL);
+        }
+    } else if (axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+        if (axis_value == GAMEPAD_AXIS_MAX) {
+            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_DOWN,
+                                GAMEPAD_BUTTON_ZR);
+        } else if (axis_value == 0) {
+            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_UP,
+                                GAMEPAD_BUTTON_ZR);
+        }
+    }
+}
 
+/**
+ * Handles an SDL gamepad added event.
+ *
+ * Attempts to open the gamepad associated with the given SDL joystick ID.
+ * If successful, the gamepad is added to the internal gamepad array and a
+ * EVENT_TYPE_GAMEPAD_CONNECT event is emitted.
+ *
+ * If the gamepad cannot be opened, the event is ignored.
+ *
+ * @param joystick_id The SDL joystick id of the connected gamepad.
+ */
+static inline void handle_gamepad_added_event(
+    const SDL_JoystickID joystick_id) {
+    assert(joystick_id != 0);
+    Gamepad *const gamepad = gamepad_from_joystick_id(joystick_id);
+    if (gamepad == NULL) return;
+    gamepad_array_push(&gamepad_array, gamepad);
+    event_queue_push(&GAMEPAD_EVENT(EVENT_TYPE_GAMEPAD_CONNECT, gamepad));
+}
+
+/**
+ * Handles an SDL gamepad removed event.
+ *
+ * Searches the internal gamepad array for the gamepad matching the given
+ * SDL joystick id, removes it from the array, and emits a
+ * EVENT_TYPE_GAMEPAD_DISCONNECT event.
+ *
+ * The gamepad is not freed, and its ; ownership is transferred to the event
+ * receiver.
+ *
+ * If the gamepad is not in the internal array, the event is ignored.
+ *
+ * @param joystick_id The SDL joystick id of the disconnected gamepad.
+ */
+static inline void handle_gamepad_removed_event(
+    const SDL_JoystickID joystick_id) {
+    assert(joystick_id != 0);
+    for (size_t i = 0; i < gamepad_array.length; ++i) {
+        Gamepad *const gamepad = gamepad_array.array[i];
+        assert(gamepad != NULL);
+        SDL_Gamepad *const sdl_gamepad = gamepad->sdl_gamepad;
+        if (SDL_GetGamepadID(sdl_gamepad) == joystick_id) {
+            gamepad_array_remove(&gamepad_array, i);
+            event_queue_push(
+                &GAMEPAD_EVENT(EVENT_TYPE_GAMEPAD_DISCONNECT, gamepad));
+            return;
+        }
+    }
+}
+
+void gamepad_update(void) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        assert(SDL_EVENT_JOYSTICK_ADDED == 1541);
         switch (event.type) {
 #ifndef PROD
+            // Ignore those events
             case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+            case SDL_EVENT_JOYSTICK_BALL_MOTION:
             case SDL_EVENT_JOYSTICK_HAT_MOTION:
             case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
             case SDL_EVENT_JOYSTICK_BUTTON_UP:
             case SDL_EVENT_JOYSTICK_ADDED:
+            case SDL_EVENT_JOYSTICK_REMOVED:
+            case SDL_EVENT_JOYSTICK_BATTERY_UPDATED:
             case SDL_EVENT_JOYSTICK_UPDATE_COMPLETE:
             case SDL_EVENT_GAMEPAD_UPDATE_COMPLETE:
                 break;
 #endif
 
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER) {
-                    if (event.gaxis.value == GAMEPAD_AXIS_MAX) {
-                        handle_button_event(event.gaxis.which,
-                                            EVENT_TYPE_BUTTON_DOWN,
-                                            GAMEPAD_BUTTON_ZL);
-                    } else if (event.gaxis.value == 0) {
-                        handle_button_event(event.gaxis.which,
-                                            EVENT_TYPE_BUTTON_UP,
-                                            GAMEPAD_BUTTON_ZL);
-                    }
-                } else if (event.gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
-                    if (event.gaxis.value == GAMEPAD_AXIS_MAX) {
-                        handle_button_event(event.gaxis.which,
-                                            EVENT_TYPE_BUTTON_DOWN,
-                                            GAMEPAD_BUTTON_ZR);
-                    } else if (event.gaxis.value == 0) {
-                        handle_button_event(event.gaxis.which,
-                                            EVENT_TYPE_BUTTON_UP,
-                                            GAMEPAD_BUTTON_ZR);
-                    }
-                }
+                handle_gamepad_axis_motion_event(event.gaxis.which,
+                                                 event.gaxis.axis,
+                                                 event.gaxis.value);
                 break;
 
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
@@ -239,20 +311,15 @@ void gamepad_update(void) {
                 break;
 
             case SDL_EVENT_GAMEPAD_ADDED:
-                Gamepad *const gamepad =
-                    gamepad_from_joystick_id(event.gdevice.which);
-                event_queue_push(&(Event){
-                    .type = EVENT_TYPE_GAMEPAD_CONNECT,
-                    .gamepad_event =
-                        {
-                            .gamepad = gamepad,
-                        },
-                });
+                handle_gamepad_added_event(event.gdevice.which);
+                break;
+
+            case SDL_EVENT_GAMEPAD_REMOVED:
+                handle_gamepad_removed_event(event.gdevice.which);
                 break;
 
             default:
                 log_debugf("unexepected event %u", event.type);
-                assert(false && "unexepected event");
         }
     }
 }
@@ -267,14 +334,13 @@ const char *gamepad_get_name(const Gamepad *const self) {
 
 int8_t gamepad_get_player_index(const Gamepad *const self) {
     assert(self != NULL);
-    assert(self->sdl_gamepad != NULL);
-    return SDL_GetGamepadPlayerIndex(self->sdl_gamepad);
+    return self->player_index;
 }
 
-void gamepad_set_player_index(Gamepad *const self,
-                                 const int8_t player_index) {
+void gamepad_set_player_index(Gamepad *const self, const int8_t player_index) {
     assert(self != NULL);
     assert(-1 <= player_index && player_index < 4);
+    self->player_index = player_index;
     if (!SDL_SetGamepadPlayerIndex(self->sdl_gamepad, player_index)) {
         log_errorf("failed to set player index for gamepad '%s'",
                    gamepad_get_name(self));
@@ -343,7 +409,7 @@ v2f gamepad_get_stick(const Gamepad *const self, const GamepadStick stick) {
 /**
  * TODO: document
  */
-static SDL_GamepadButton gamepad_button_to_sdl_gamepad_button(
+static inline SDL_GamepadButton gamepad_button_to_sdl_gamepad_button(
     const GamepadButton button) {
     assert(button <= GAMEPAD_BUTTON_RIGHT);
     static const SDL_GamepadButton mapping[] = {
@@ -355,21 +421,29 @@ static SDL_GamepadButton gamepad_button_to_sdl_gamepad_button(
     return mapping[button];
 }
 
-bool gamepad_get_button(const Gamepad *const self,
-                           const GamepadButton button) {
+/**
+ * TODO: document
+ */
+[[gnu::nonnull(1)]]
+static inline bool gamepad_get_trigger_button(
+    const Gamepad *const self, const SDL_GamepadAxis trigger_axis) {
+    assert(self != NULL);
+    assert(trigger_axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ||
+           trigger_axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    return SDL_GetGamepadAxis(self->sdl_gamepad, trigger_axis) ==
+           GAMEPAD_AXIS_MAX;
+}
+
+bool gamepad_get_button(const Gamepad *const self, const GamepadButton button) {
     assert(self != NULL);
     assert(self->sdl_gamepad != NULL);
-    (void)button;
-    if (button == GAMEPAD_BUTTON_ZL) {
-        return SDL_GetGamepadAxis(self->sdl_gamepad,
-                                  SDL_GAMEPAD_AXIS_LEFT_TRIGGER) ==
-               GAMEPAD_AXIS_MAX;
-    }
-    if (button == GAMEPAD_BUTTON_ZR) {
-        return SDL_GetGamepadAxis(self->sdl_gamepad,
-                                  SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) ==
-               GAMEPAD_AXIS_MAX;
-    }
+
+    if (button == GAMEPAD_BUTTON_ZL)
+        return gamepad_get_trigger_button(self, SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+
+    if (button == GAMEPAD_BUTTON_ZR)
+        return gamepad_get_trigger_button(self, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+
     return SDL_GetGamepadButton(self->sdl_gamepad,
                                 gamepad_button_to_sdl_gamepad_button(button));
 }
@@ -389,6 +463,5 @@ void gamepad_rumble(Gamepad *const self) {
         exit(EXIT_FAILURE);
     }
 
-    log_debugf("start rumble effect on gamepad '%s'",
-               gamepad_get_name(self));
+    log_debugf("start rumble effect on gamepad '%s'", gamepad_get_name(self));
 }

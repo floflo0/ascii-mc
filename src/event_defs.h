@@ -55,3 +55,8 @@ typedef struct {
     };
     EventType type;
 } Event;
+
+#define GAMEPAD_EVENT(event_type, gamepad_param)                         \
+    (Event) {                                                            \
+        .type = event_type, .gamepad_event = {.gamepad = gamepad_param}, \
+    }

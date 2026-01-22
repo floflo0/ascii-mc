@@ -45,7 +45,4 @@ typedef enum : uint8_t {
 /**
  * Enum representing the sticks available on a gamepad.
  */
-typedef enum : uint8_t {
-    GAMEPAD_STICK_LEFT,
-    GAMEPAD_STICK_RIGHT
-} GamepadStick;
+typedef enum : uint8_t { GAMEPAD_STICK_LEFT, GAMEPAD_STICK_RIGHT } GamepadStick;

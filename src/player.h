@@ -29,8 +29,7 @@ typedef struct {
 
 [[gnu::nonnull(1, 5)]]
 void player_init(Player *const restrict self, const int8_t player_index,
-                 const uint8_t number_players,
-                 Gamepad *const restrict gamepad,
+                 const uint8_t number_players, Gamepad *const restrict gamepad,
                  World *const restrict world);
 
 [[gnu::nonnull]]

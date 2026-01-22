@@ -203,8 +203,7 @@ static inline void player_generate_mesh(Player *const self) {
 }
 
 void player_init(Player *const restrict self, const int8_t player_index,
-                 const uint8_t number_players,
-                 Gamepad *const restrict gamepad,
+                 const uint8_t number_players, Gamepad *const restrict gamepad,
                  World *const restrict world) {
     assert(self != NULL);
     assert(world != NULL);
@@ -224,8 +223,7 @@ void player_init(Player *const restrict self, const int8_t player_index,
     self->game_mode = PLAYER_DEFAULT_GAME_MODE;
 
     self->gamepad = gamepad;
-    if (gamepad != NULL)
-        gamepad_set_player_index(gamepad, self->player_index);
+    if (gamepad != NULL) gamepad_set_player_index(gamepad, self->player_index);
 
     self->last_grounded_time_microseconds = 0;
     self->can_jump = false;

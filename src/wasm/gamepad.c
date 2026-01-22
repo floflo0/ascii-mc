@@ -109,12 +109,14 @@ static const Mapping xbox_wireless_controller_chromium_mapping = {
         },
     .min_button_count = 17,
     .min_axis_count = 4,
-    .gamepad_names = {
-        "Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e Product: 02fd)",
-        "Gamepad Controller (STANDARD GAMEPAD Vendor: 045e Product: 028e)",
-        "057e-2009-Nintendo Co., Ltd. Pro Controller",
-        NULL,
-    },
+    .gamepad_names =
+        {
+            "Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e Product: "
+            "02fd)",
+            "Gamepad Controller (STANDARD GAMEPAD Vendor: 045e Product: 028e)",
+            "057e-2009-Nintendo Co., Ltd. Pro Controller",
+            NULL,
+        },
 };
 
 static const Mapping xbox_wireless_controller_firefox_mapping = {
@@ -153,10 +155,11 @@ static const Mapping xbox_wireless_controller_firefox_mapping = {
         },
     .min_button_count = 19,
     .min_axis_count = 8,
-    .gamepad_names = {
-        "045e-02fd-Xbox Wireless Controller",
-        NULL,
-    },
+    .gamepad_names =
+        {
+            "045e-02fd-Xbox Wireless Controller",
+            NULL,
+        },
 };
 
 static const Mapping xbox_360_pad_firefox_mapping = {
@@ -195,10 +198,11 @@ static const Mapping xbox_360_pad_firefox_mapping = {
         },
     .min_button_count = 17,
     .min_axis_count = 6,
-    .gamepad_names = {
-        "045e-028e-Microsoft X-Box 360 pad",
-        NULL,
-    },
+    .gamepad_names =
+        {
+            "045e-028e-Microsoft X-Box 360 pad",
+            NULL,
+        },
 };
 
 static const Mapping *mappings[] = {
@@ -232,7 +236,8 @@ static Gamepad *gamepad_from_index(const uint32_t index) {
          i < sizeof(mappings) / sizeof(*mappings) && self->mappings == NULL;
          ++i) {
         log_debugf("%lu", i);
-        for (const char *const *name = mappings[i]->gamepad_names; *name; ++name) {
+        for (const char *const *name = mappings[i]->gamepad_names; *name;
+             ++name) {
             if (strcmp(gamepad_name, *name) == 0) {
                 if (buttons_count >= mappings[i]->min_button_count &&
                     axis_count >= mappings[i]->min_axis_count) {

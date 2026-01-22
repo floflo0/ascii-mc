@@ -1,33 +1,28 @@
 import { Exit } from './exit';
-import type { Exports, RunCallback, RunCallbackInt, RunCallbackPtr } from './exports';
-import { JS_NULL, JsObjectsMemory, type JS_Object } from './js-object-memory';
+import type { Exports, RunCallback, RunCallbackUint32, WasmMain } from './exports';
+import type { Imports } from './imports';
 import { Terminal } from './terminal';
-import type { Ptr, SizeT, StringPtr } from './types';
+import type { Ptr, CharPtr } from './types';
 
 const MEMORY_SIZE: number = 15625;  // 1024 MB
 
 const NULL: Ptr = 0;
 
 export class Wasm {
-
     private readonly memory: WebAssembly.Memory;
     private readonly memoryView: Uint8Array;
     private readonly terminal: Terminal = new Terminal();
-    private readonly jsObjectsMemory: JsObjectsMemory = new JsObjectsMemory();
-    private readonly textDecoder = new TextDecoder();
-    private readonly textEncoder = new TextEncoder();
+    private readonly textDecoder: TextDecoder = new TextDecoder();
+    private readonly textEncoder: TextEncoder = new TextEncoder();
 
-    private mainWasm: () => void = () => {
+    private mainWasm: WasmMain = () => {
         console.assert(false, "mainWasm was not loaded");
     };
     private runCallback: RunCallback = (_callback) => {
         console.assert(false, "runCallback was not loaded");
     };
-    private runCallbackInt: RunCallbackInt = (_callback, _param) => {
-        console.assert(false, "runCallbackInt was not loaded");
-    }
-    private runCallbackPtr: RunCallbackPtr = (_callback, _ptr) => {
-        console.assert(false, "runCallbackPtr was not loaded");
+    private runCallbackUint32: RunCallbackUint32 = (_callback) => {
+        console.assert(false, "runCallbackUint32 was not loaded");
     };
 
     private constructor(memory: WebAssembly.Memory) {
@@ -73,52 +68,28 @@ export class Wasm {
         const {
             wasm_main,
             run_callback,
-            run_callback_int,
-            run_callback_ptr,
+            run_callback_uint32,
         } = instance.exports as Exports;
         this.mainWasm = wasm_main;
         this.runCallback = run_callback;
-        this.runCallbackInt = run_callback_int;
-        this.runCallbackPtr = run_callback_ptr;
+        this.runCallbackUint32 = run_callback_uint32;
     }
 
-    private buildEnv() {
+    private buildEnv(): Imports {
         return {
             memory: this.memory,
-            JS_Array_foreach: (arrayIndex: JS_Object, callback: Ptr) => {
-                console.assert(arrayIndex !== JS_NULL);
-                console.assert(callback !== NULL);
-                const array =
-                    this.jsObjectsMemory.get(arrayIndex) as Array<object>;
-                for (let i = 0; i < array.length; ++i) {
-                    this.runCallbackInt(
-                        callback,
-                        this.jsObjectsMemory.add(array[i])
-                    )
-                }
-            },
-            JS_console_log: (ptr: StringPtr) => {
+            JS_console_log: (ptr) => {
                 console.log(this.str(ptr));
             },
-            JS_console_error: (ptr: StringPtr) => {
+            JS_console_error: (ptr) => {
                 console.error(this.str(ptr));
             },
-            JS_requestAnimationFrame: (callback: Ptr): number => {
+            JS_requestAnimationFrame: (callback) => {
                 console.assert(callback != NULL);
-                return requestAnimationFrame(() => this.runCallback(callback));
+                requestAnimationFrame(() => this.runCallback(callback));
             },
-            JS_requestAnimationFrame_data: (
-                callback: Ptr,
-                data: Ptr,
-            ): number => {
-                console.assert(callback != NULL);
-                return requestAnimationFrame(() => {
-                    this.runCallbackPtr(callback, data);
-                });
-            },
-            JS_cancelAnimationFrame: cancelAnimationFrame,
             JS_Date_now: () => BigInt(Date.now()),
-            JS_performance_now: () => Number(performance.now()),
+            JS_performance_now: () => performance.now(),
             pow: Math.pow,
             powf: Math.pow,
             cosf: Math.cos,
@@ -127,80 +98,9 @@ export class Wasm {
             atanf: Math.atan,
             roundf: Math.round,
             isnanf: isNaN,
-            fmod: (x: number, y: number) => x % y,
-            fmodf: (x: number, y: number) => x % y,
-            JS_navigator_getGamepads: () => {
-                return this.jsObjectsMemory.add(navigator.getGamepads());
-            },
-            JS_GamepadArray_get: (arrayIndex: JS_Object,
-                                  gamepadIndex: number): JS_Object => {
-                console.assert(arrayIndex !== JS_NULL);
-                console.assert(gamepadIndex !== JS_NULL);
-                const array =
-                    this.jsObjectsMemory.get(arrayIndex) as (Gamepad | null)[];
-                console.assert(array != null);
-                return this.jsObjectsMemory.add(array[gamepadIndex]);
-            },
-            JS_Gamepad_get_id: (gamepadIndex: JS_Object, id: StringPtr,
-                                idSize: SizeT) => {
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad | null;
-                console.assert(gamepad !== null);
-                console.assert(gamepad!.id.length < idSize);
-                const gamepadId = gamepad!.id;
-                const encodedId = this.textEncoder.encode(gamepadId + "\0");
-                if (idSize < encodedId.length) {
-                    throw new Error(
-                        `buffer too small to contain gamepad id '${gamepadId}'`
-                    );
-                }
-                this.memoryView.set(encodedId, id);
-            },
-            JS_Gamepad_get_index: (gamepadIndex: JS_Object): number => {
-                console.assert(gamepadIndex != JS_NULL);
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad;
-                console.assert(gamepad !== null);
-                return gamepad!.index;
-            },
-            JS_Gamepad_get_connected: (gamepadIndex: JS_Object): boolean => {
-                console.assert(gamepadIndex != JS_NULL);
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad;
-                console.assert(gamepad !== null);
-                return gamepad!.connected;
-            },
-            JS_Gamepad_get_axe: (
-                gamepadIndex: JS_Object,
-                axeIndex: number,
-            ): number => {
-                console.assert(gamepadIndex != JS_NULL);
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad;
-                console.assert(gamepad !== null);
-                return gamepad!.axes[axeIndex];
-            },
-            JS_Gamepad_get_button: (gamepadIndex: JS_Object,
-                buttonIndex: number,
-            ): boolean => {
-                console.assert(gamepadIndex != JS_NULL);
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad;
-                console.assert(gamepad !== null);
-                return gamepad!.buttons[buttonIndex].pressed;
-            },
-            JS_Gamepad_get_axes_length: (gamepadIndex: number): number => {
-                console.assert(gamepadIndex !== JS_NULL);
-                const gamepad =
-                    this.jsObjectsMemory.get(gamepadIndex) as Gamepad;
-                console.assert(gamepad !== null);
-                return gamepad.axes.length;
-            },
-            JS_Object_free: (objectIndex: JS_Object) => {
-                console.assert(objectIndex != JS_NULL);
-                this.jsObjectsMemory.remove(objectIndex);
-            },
-            JS_write: (bufferPtr: Ptr, count: SizeT): void => {
+            fmod: (x, y) => x % y,
+            fmodf: (x, y) => x % y,
+            JS_write: (bufferPtr, count) => {
                 this.terminal.setContent(
                     this.textDecoder.decode(this.memoryView.subarray(
                         bufferPtr,
@@ -208,19 +108,141 @@ export class Wasm {
                     )),
                 );
             },
-            JS_read_char: (): number => this.terminal.readChar(),
-            JS_get_memory_size: (): SizeT => this.memory.buffer.byteLength,
-            JS_get_terminal_width: (): number => this.terminal.getWidth(),
-            JS_get_terminal_height: (): number => this.terminal.getHeight(),
-            _exit: (status: number): void => {
+            JS_read_char: () => this.terminal.readChar(),
+            JS_get_memory_size: () => this.memory.buffer.byteLength,
+            JS_get_terminal_width: () => this.terminal.getWidth(),
+            JS_get_terminal_height: () => this.terminal.getHeight(),
+            _exit: (status) => {
                 throw new Exit(status);
+            },
+            JS_ongamepadconnected: (callback) => {
+                if (callback === NULL) {
+                    window.ongamepadconnected = null;
+                    return;
+                }
+
+                window.ongamepadconnected = (event) => {
+                    this.runCallbackUint32(callback, event.gamepad.index);
+                }
+            },
+            JS_ongamepaddisconnected: (callback) => {
+                if (callback === NULL) {
+                    window.ongamepaddisconnected = null;
+                    return;
+                }
+
+                window.ongamepaddisconnected = (event) => {
+                    this.runCallbackUint32(callback, event.gamepad.index);
+                }
+            },
+            JS_gameapad_rumble: (
+                gamepadIndex,
+                lowFrequency,
+                highFrequency,
+                durationMiliseconds,
+            ) => {
+                console.assert(0 <= lowFrequency && lowFrequency <= 0xffff);
+                console.assert(0 <= highFrequency && highFrequency <= 0xffff);
+                console.assert(0.0 < durationMiliseconds);
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                if (gamepad!.hapticActuators !== undefined) {
+                    if (!gamepad!.hapticActuators.length) return;
+
+                    this.hapticActuatorsRumble(
+                        gamepad!.hapticActuators[0],
+                        lowFrequency / 0xffff,
+                        highFrequency / 0xffff,
+                        durationMiliseconds,
+                    );
+                    return;
+                }
+
+                if (gamepad!.vibrationActuator === undefined) return;
+
+                this.hapticActuatorsRumble(
+                    gamepad!.vibrationActuator,
+                    lowFrequency / 0xffff,
+                    highFrequency / 0xffff,
+                    durationMiliseconds,
+                );
+            },
+            JS_get_gamepad_buttons_count: (gamepadIndex) => {
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                return gamepad!.buttons.length;
+            },
+            JS_get_gamepad_axis_count: (gamepadIndex) => {
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                return gamepad!.axes.length;
+            },
+            JS_get_gamepad_id: (gamepadIndex, gamepadId, gamepadIdSize) => {
+                console.assert(gamepadId !== NULL);
+                console.assert(gamepadIdSize > 0);
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                const encodedId = this.textEncoder.encode(gamepad!.id + "\0");
+                if (gamepadIdSize < encodedId.length) {
+                    throw new Error(
+                        `buffer too small to contain gamepad id '${gamepadId}'`,
+                    );
+                }
+                this.memoryView.set(encodedId, gamepadId);
+            },
+            JS_Gamepad_get_axis: (gamepadIndex, axisIndex) => {
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                return gamepad!.axes[axisIndex];
+            },
+            JS_get_gamepad_button: (gamepadIndex, button) => {
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                console.assert(gamepad !== null);
+                return gamepad!.buttons[button].pressed;
             },
         };
     }
 
-    private str(ptr: StringPtr): string {
+    private str(ptr: CharPtr): string {
         let end = ptr;
         while (this.memoryView[end]) ++end;
         return this.textDecoder.decode(this.memoryView.subarray(ptr, end));
     };
+
+    private hapticActuatorsRumble(
+        hapticActuators: GamepadHapticActuator,
+        lowFrequency: number,
+        highFrequency: number,
+        durationMiliseconds: number,
+    ): void {
+        console.assert(hapticActuators !== undefined);
+        console.assert(0.0 <= lowFrequency && lowFrequency <= 1.0);
+        console.assert(0.0 <= highFrequency && highFrequency <= 1.0);
+        console.assert(0.0 < durationMiliseconds);
+        if (hapticActuators.playEffect !== undefined) {
+            let effect: GamepadHapticEffectType;
+            if (hapticActuators.effects !== undefined &&
+                hapticActuators.effects.length) {
+                effect = hapticActuators.effects[0];
+            } else if (hapticActuators.type !== undefined) {
+                effect = hapticActuators.type;
+            } else {
+                return;
+            }
+
+            hapticActuators.playEffect(effect, {
+                duration: durationMiliseconds,
+                strongMagnitude: lowFrequency,
+                weakMagnitude: highFrequency,
+            });
+            return;
+        }
+
+        if (hapticActuators.pulse === undefined) return;
+
+        hapticActuators.pulse(
+            (lowFrequency + highFrequency) * 0.5,
+            durationMiliseconds,
+        );
+    }
 }

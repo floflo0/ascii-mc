@@ -9,9 +9,9 @@
 #include <string.h>
 
 #include "command.h"
+#include "event_queue.h"
 #include "gamepad.h"
 #include "gamepad_array.h"
-#include "event_queue.h"
 #include "log.h"
 #include "player.h"
 #include "vec.h"
@@ -56,8 +56,8 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
 
     event_queue_init();
 
-    gamepad_init();
     gamepad_array_init(&game.gamepads, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
+    gamepad_init();
 
     game.number_players = number_players;
     for (uint8_t i = 0; i < number_players; ++i) {
@@ -345,8 +345,7 @@ static inline void game_handle_resize_event(void) {
 }
 
 [[gnu::nonnull]]
-static inline void game_hanlde_gamepad_connect_event(
-    Gamepad *const gamepad) {
+static inline void game_hanlde_gamepad_connect_event(Gamepad *const gamepad) {
     assert(gamepad != NULL);
 
     gamepad_array_push(&game.gamepads, gamepad);
@@ -387,8 +386,14 @@ static inline void game_update(const float delta_time_seconds) {
 
             case EVENT_TYPE_GAMEPAD_DISCONNECT: {
                 Gamepad *const gamepad = event->gamepad_event.gamepad;
+                log_debugf("processing disconnect event for gamepad '%s'",
+                           gamepad_get_name(gamepad));
                 const int8_t player_index = gamepad_get_player_index(gamepad);
+                log_debugf("gamepad '%s' player_index = %d",
+                           gamepad_get_name(gamepad), player_index);
                 if (player_index != -1) {
+                    log_debugf("remove gamepad '%s' from player %d",
+                               gamepad_get_name(gamepad), player_index);
                     game.players[player_index].gamepad = NULL;
                 }
                 for (size_t i = 0; i < game.gamepads.length; ++i) {
@@ -417,8 +422,8 @@ static inline void game_update(const float delta_time_seconds) {
 
         if (gamepad == NULL) continue;
 
-        const v2f left_stick_value = gamepad_get_stick(gamepad,
-                                                       GAMEPAD_STICK_LEFT);
+        const v2f left_stick_value =
+            gamepad_get_stick(gamepad, GAMEPAD_STICK_LEFT);
         player->input_velocity.x +=
             left_stick_value.x * PLAYER_MOVEMENT_SPEED * delta_time_seconds;
         player->input_velocity.z += left_stick_value.y * -1.0f *

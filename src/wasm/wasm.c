@@ -8,12 +8,8 @@ void run_callback(void (*callback)(void)) {
     callback();
 }
 
-void run_callback_int(void (*callback)(const int), const int param) {
-    assert(callback != NULL);
-    callback(param);
-}
-
-void run_callback_ptr(void (*callback)(void *const), void *const param) {
+void run_callback_uint32(void (*callback)(const uint32_t),
+                         const uint32_t param) {
     assert(callback != NULL);
     callback(param);
 }

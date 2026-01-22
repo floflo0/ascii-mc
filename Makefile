@@ -35,7 +35,7 @@ CFLAGS +=                                \
 ifeq ($(BUILD_TYPE), release)
 	CFLAGS += -DPROD -DNDEBUG -O3 -ffast-math -flto=auto -march=native
 else ifeq ($(BUILD_TYPE), debug)
-	CFLAGS += -ggdb
+	CFLAGS += -ggdb -fsanitize=unreachable -fsanitize=address -fsanitize=leak
 endif
 
 LDFLAGS := $(shell pkg-config --libs $(LIBS)) -lm -lpthread
@@ -75,8 +75,7 @@ ifeq ($(PLATFORM), wasm)
 		-Wl,--allow-undefined                              \
 		-Wl,--export=wasm_main                             \
 		-Wl,--export=run_callback                          \
-		-Wl,--export=run_callback_int                      \
-		-Wl,--export=run_callback_ptr                      \
+		-Wl,--export=run_callback_uint32                   \
 		-Wl,--import-memory                                \
 		-Wl,-z,stack-size=8388608
 	ifeq ($(BUILD_TYPE), release)

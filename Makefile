@@ -152,7 +152,7 @@ test: $(TESTS_EXEC)
 	$(TESTS_EXEC)
 
 $(TESTS_EXEC): $(TESTS_OBJS) $(filter-out $(BUILD_DIR)/main.o, $(OBJS)) $(TEXTURE_OBJS) | $(TESTS_BUILD_DIR)
-	$(CC) $(TESTS_CFLAGS) $^ -o $@ $(TESTS_LDFLAGS)
+	$(CC) $(CFLAGS) $(TESTS_CFLAGS) $^ -o $@ $(TESTS_LDFLAGS)
 
 $(TESTS_BUILD_DIR):
 	mkdir --parents --verbose $@

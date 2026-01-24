@@ -1,9 +1,9 @@
 #include "gamepad.h"
 
 #include <SDL3/SDL.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #include "config.h"
 #include "event_queue.h"
@@ -42,7 +42,7 @@ static GamepadArray gamepad_array;
 static pthread_t thread;
 
 /**
- * TODO: document
+ * Initialized the interlal gamepad array and init the SDL gamepad subsystem.
  */
 static inline void gamepad_init_internal(void) {
     gamepad_array_init(&gamepad_array, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
@@ -63,11 +63,15 @@ static inline void gamepad_init_internal(void) {
 
 #ifndef PROD
 /**
- * TODO: document
+ * Debug utility function that logs an SDL property of a gamepad.
+ *
+ * @param data The gamepad of which the property belongs.
+ * @param property The SDL properties ID containing the property.
+ * @param name The name of the property to print.
  */
 [[gnu::nonnull(1, 3)]]
 static void gamepad_enumerate_properties(void *const restrict data,
-                                         const SDL_PropertiesID props,
+                                         const SDL_PropertiesID property,
                                          const char *const restrict name) {
     assert(data != NULL);
     assert(name != NULL);
@@ -75,25 +79,26 @@ static void gamepad_enumerate_properties(void *const restrict data,
 
     log_debugf("gamepad '%s' has property '%s'", gamepad_get_name(self), name);
 
-    switch (SDL_GetPropertyType(props, name)) {
+    switch (SDL_GetPropertyType(property, name)) {
         case SDL_PROPERTY_TYPE_POINTER:
             log_debugf("'%s' is a pointer property", name);
             break;
         case SDL_PROPERTY_TYPE_STRING:
             log_debugf("'%s' = '%s'", name,
-                       SDL_GetStringProperty(props, name, ""));
+                       SDL_GetStringProperty(property, name, ""));
             break;
         case SDL_PROPERTY_TYPE_NUMBER:
             log_debugf("'%s' = %" SDL_PRIs64, name,
-                       SDL_GetNumberProperty(props, name, 0));
+                       SDL_GetNumberProperty(property, name, 0));
             break;
         case SDL_PROPERTY_TYPE_FLOAT:
             log_debugf("'%s' = %f", name,
-                       SDL_GetFloatProperty(props, name, 0.0f));
+                       SDL_GetFloatProperty(property, name, 0.0f));
             break;
         case SDL_PROPERTY_TYPE_BOOLEAN:
-            log_debugf("'%s' = %s", name,
-                       BOOL_TO_STR(SDL_GetBooleanProperty(props, name, false)));
+            log_debugf(
+                "'%s' = %s", name,
+                BOOL_TO_STR(SDL_GetBooleanProperty(property, name, false)));
             break;
         case SDL_PROPERTY_TYPE_INVALID:
         default:
@@ -104,7 +109,15 @@ static void gamepad_enumerate_properties(void *const restrict data,
 #endif
 
 /**
- * TODO: document
+ * Create a new gamepad object from an SDL joystick id.
+ *
+ * This function allocates memory for a new gamepad, opens the corresponding
+ * SDL gamepad, and queries its properties. The returned object is owned by
+ * the caller and must be destroyed using gamepad_destroy().
+ *
+ * @param joystick_id The SDL joystick id used to open the gamepad.
+ * @return A pointer to the created Gamepad, or NULL if the gamepad could not
+ *         be opened.
  */
 static Gamepad *gamepad_from_joystick_id(const SDL_JoystickID joystick_id) {
     assert(joystick_id != 0);
@@ -131,8 +144,8 @@ static Gamepad *gamepad_from_joystick_id(const SDL_JoystickID joystick_id) {
 #ifndef PROD
     if (!SDL_EnumerateProperties(properties, gamepad_enumerate_properties,
                                  self)) {
-        log_errorf("failed to enumerate properties for gamepad '%s'",
-                   gamepad_get_name(self));
+        log_errorf("failed to enumerate properties for gamepad '%s': %s",
+                   gamepad_get_name(self), SDL_GetError());
         exit(EXIT_FAILURE);
     }
 #endif
@@ -147,7 +160,10 @@ static Gamepad *gamepad_from_joystick_id(const SDL_JoystickID joystick_id) {
 }
 
 /**
- * TODO: document
+ * Convert an SDL_GamepadButton to a GamepadButton.
+ *
+ * @param button The SDL_GamepadButton to convert.
+ * @returns the converted button.
  */
 static GamepadButton sdl_gamepad_button_to_gamepad_button(
     const SDL_GamepadButton button) {
@@ -300,9 +316,8 @@ static void gamepad_update_internal(void) {
 #endif
 
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                handle_gamepad_axis_motion_event(event.gaxis.which,
-                                                 event.gaxis.axis,
-                                                 event.gaxis.value);
+                handle_gamepad_axis_motion_event(
+                    event.gaxis.which, event.gaxis.axis, event.gaxis.value);
                 break;
 
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
@@ -343,9 +358,9 @@ static void gamepad_quit_internal([[gnu::unused]] void *_data) {
 static void set_thread_cancel_state(const int state) {
     assert(state == PTHREAD_CANCEL_ENABLE || state == PTHREAD_CANCEL_DISABLE);
     const int return_code = pthread_setcancelstate(state, NULL);
-    if (return_code != 0) {
+    if (return_code < 0) {
         log_errorf("failed to set cancel state for gamepad thread: %s",
-                   strerror(return_code));
+                   strerror(-return_code));
         exit(EXIT_FAILURE);
     }
 }
@@ -407,8 +422,8 @@ void gamepad_set_player_index(Gamepad *const self, const int8_t player_index) {
     assert(-1 <= player_index && player_index < 4);
     self->player_index = player_index;
     if (!SDL_SetGamepadPlayerIndex(self->sdl_gamepad, player_index)) {
-        log_errorf("failed to set player index for gamepad '%s'",
-                   gamepad_get_name(self));
+        log_errorf("failed to set player index for gamepad '%s': %s",
+                   gamepad_get_name(self), SDL_GetError());
         exit(EXIT_FAILURE);
     }
 }

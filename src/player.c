@@ -730,7 +730,7 @@ bool player_get_targeted_block(const Player *const restrict self,
 
     const v3f ray_start = self->camera.position;
     const v3f ray_direction =
-        v3f_mul(camera_get_look_direction(&self->camera), PLAYER_RANGE);
+        v3f_mul(camera_get_forward_direction(&self->camera), PLAYER_RANGE);
 
     int min_x = floorf(ray_start.x);
     int max_x = floorf(ray_start.x + ray_direction.x);

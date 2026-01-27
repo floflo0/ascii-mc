@@ -6,12 +6,14 @@
 
 #include "block.h"
 #include "camera_defs.h"
+#include "collision_defs.h"
 #include "config.h"
 #include "mesh_defs.h"
 #include "viewport.h"
 
 typedef struct {
     int x, z;
+    Aabb aabb;
     Mesh mesh;
     bool mesh_dirty;
 #ifndef __wasm__

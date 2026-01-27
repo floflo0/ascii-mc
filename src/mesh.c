@@ -13,11 +13,6 @@
 #include "vec.h"
 #include "window.h"
 
-typedef struct {
-    v3f normal;
-    float d;
-} Plane;
-
 void mesh_init(Mesh *const self, const size_t preallocate_vertices_size,
                const size_t preallocate_triangles_size) {
     assert(self != NULL);
@@ -61,7 +56,7 @@ static v4f plane_intersect(const Plane *const plane, const v4f v1,
 
     const v3f direction = v4f_sub(v1, v2).xyz;
 
-    const float numerator = plane->d - v3f_dot(plane->normal, v1.xyz);
+    const float numerator = plane->distance - v3f_dot(plane->normal, v1.xyz);
     const float denominator = v3f_dot(plane->normal, direction);
 
     assert(denominator != 0.0f);
@@ -93,9 +88,12 @@ static void planes_clip_triangle(const Plane planes[6],
 
     const Plane *plane = &planes[plane_index];
 
-    const bool v1_in = v3f_dot(plane->normal, triangle->v1.xyz) >= plane->d;
-    const bool v2_in = v3f_dot(plane->normal, triangle->v2.xyz) >= plane->d;
-    const bool v3_in = v3f_dot(plane->normal, triangle->v3.xyz) >= plane->d;
+    const bool v1_in =
+        v3f_dot(plane->normal, triangle->v1.xyz) >= plane->distance;
+    const bool v2_in =
+        v3f_dot(plane->normal, triangle->v2.xyz) >= plane->distance;
+    const bool v3_in =
+        v3f_dot(plane->normal, triangle->v3.xyz) >= plane->distance;
 
     if (v1_in) {
         if (v2_in) {
@@ -295,29 +293,8 @@ static inline void clip_triangle(const Camera *const restrict camera,
     assert(triangle != NULL);
     assert(array != NULL);
     assert(arena != NULL);
-
-    const float d = tanf(CAMERA_FOV / 2.0f);
-    const float a = atanf(d / CHARACTER_RATIO);
-    const float b = atanf(d * camera->aspect_ratio);
-    const float cos_a = cosf(a);
-    const float sin_a = sinf(a);
-    const float cos_b = cosf(b);
-    const float sin_b = sinf(b);
-    const Plane planes[6] = {
-        // near
-        {{0.0f, 0.0f, 1.0f}, CAMERA_Z_NEAR},
-        // far
-        {{0.0f, 0.0f, -1.0f}, -CAMERA_Z_FAR},
-        // top
-        {{0.0f, -cos_a, sin_a}, 0.0f},
-        // bottom
-        {{0.0f, cos_a, sin_a}, 0.0f},
-        // left
-        {{cos_b, 0.0f, sin_b}, 0.0f},
-        // right
-        {{-cos_b, 0.0f, sin_b}, 0.0f},
-    };
-    planes_clip_triangle(planes, 0, triangle, array, arena);
+    planes_clip_triangle(camera->frustum_planes_in_camera_space.planes, 0,
+                         triangle, array, arena);
 }
 
 [[gnu::nonnull]]

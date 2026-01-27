@@ -6,6 +6,7 @@
 #include <string.h>
 
 // #define LOG_LEVEL_ERROR
+#include "camera.h"
 #include "log.h"
 #include "mesh.h"
 #include "perlin_noise.h"
@@ -549,6 +550,33 @@ static inline void chunk_generate_mesh(Chunk *const restrict self,
                (get_time_microseconds() - start) / 1000.0f);
 }
 
+[[gnu::nonnull]]
+static void chunck_update_aabb(Chunk *const self) {
+    assert(self != NULL);
+    self->aabb.position.y = -1.0f;
+    self->aabb.size.y = -1.0f;
+    for (int y = 0; y < CHUNK_HEIGHT; ++y) {
+        for (int x = 0; x < CHUNK_SIZE; ++x) {
+            for (int z = 0; z < CHUNK_SIZE; ++z) {
+                if (self->blocks[x][y][z].type != BLOCK_TYPE_AIR) {
+                    self->aabb.position.y = y;
+                    break;
+                }
+            }
+        }
+    }
+    for (int y = CHUNK_HEIGHT - 1; y >= 0; --y) {
+        for (int x = 0; x < CHUNK_SIZE; ++x) {
+            for (int z = 0; z < CHUNK_SIZE; ++z) {
+                if (self->blocks[x][y][z].type != BLOCK_TYPE_AIR) {
+                    self->aabb.size.y = y + 1.0f - self->aabb.position.y;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 [[gnu::returns_nonnull]]
 static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
                            const int8_t player_index) {
@@ -558,6 +586,8 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
 
     self->x = x;
     self->z = z;
+    self->aabb.position = (v3f){x * CHUNK_SIZE, 0.0f, z * CHUNK_SIZE};
+    self->aabb.size = (v3f){CHUNK_SIZE, 0.0f, CHUNK_SIZE};
 
 #ifndef __wasm__
     pthread_mutex_init(&self->mesh_mutex, NULL);
@@ -656,6 +686,7 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
             }
         }
     }
+    chunck_update_aabb(self);
 
     mesh_init(&self->mesh, 1024, 1024);
     self->mesh_dirty = true;
@@ -682,6 +713,8 @@ static void chunk_render(Chunk *const restrict self,
     assert(camera != NULL);
     assert(world != NULL);
     assert(viewport != NULL);
+
+    if (!camera_aabb_in_frustum(camera, &self->aabb)) return;
 
     mutex_lock(&self->mesh_mutex);
     if (self->mesh_dirty) {
@@ -1200,6 +1233,7 @@ void world_place_block(World *const self, const v3i block_position) {
            BLOCK_TYPE_AIR);
 
     chunk->blocks[x_index][block_position.y][z_index].type = self->place_block;
+    chunck_update_aabb(chunk);
 
     world_update_chunk_mesh_around_block(self, chunk, x_index, z_index);
 }
@@ -1226,6 +1260,7 @@ void world_break_block(World *const self, const v3i block_position) {
         return;
 
     chunk->blocks[x_index][block_position.y][z_index].type = BLOCK_TYPE_AIR;
+    chunck_update_aabb(chunk);
 
     world_update_chunk_mesh_around_block(self, chunk, x_index, z_index);
 }

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "camera.h"
 #include "command.h"
 #include "event_queue.h"
 #include "gamepad.h"
@@ -555,10 +556,11 @@ static inline void game_render_ui(const float delta_time_seconds) {
 [[gnu::nonnull]]
 static void *game_player_render_thread(void *const data) {
     assert(data != NULL);
-    const Player *const player = data;
-    const Camera *const camera = &player->camera;
+    Player *const player = data;
+    Camera *const camera = &player->camera;
     const Viewport *const viewport = &player->viewport;
 
+    camera_update_frustum_planes(camera);
     for (uint8_t j = 0; j < game.number_players; ++j) {
         if (player->player_index == j) continue;
         player_render(&game.players[j], camera, viewport);

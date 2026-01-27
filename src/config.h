@@ -32,7 +32,7 @@
 #ifndef __wasm__
 #define WORLD_RENDER_DISTANCE 6  // chunks
 #else
-#define WORLD_RENDER_DISTANCE 3  // chunks
+#define WORLD_RENDER_DISTANCE 4  // chunks
 #endif
 #define WORLD_LOAD_DISTANCE (WORLD_RENDER_DISTANCE + 1)
 #define WORLD_RENDER_THREADS_NUMBER 18

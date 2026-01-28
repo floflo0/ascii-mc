@@ -231,11 +231,9 @@ static Gamepad *gamepad_from_index(const uint32_t index) {
     const char *const gamepad_name = gamepad_get_name(self);
     const size_t buttons_count = JS_get_gamepad_buttons_count(index);
     const size_t axis_count = JS_get_gamepad_axis_count(index);
-    log_debugf("seacrh mapping");
     for (size_t i = 0;
          i < sizeof(mappings) / sizeof(*mappings) && self->mappings == NULL;
          ++i) {
-        log_debugf("%lu", i);
         for (const char *const *name = mappings[i]->gamepad_names; *name;
              ++name) {
             if (strcmp(gamepad_name, *name) == 0) {

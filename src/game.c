@@ -350,7 +350,7 @@ static inline void game_hanlde_gamepad_connect_event(Gamepad *const gamepad) {
     assert(gamepad != NULL);
 
     gamepad_array_push(&game.gamepads, gamepad);
-    for (int8_t i = 0; i < 4; ++i) {
+    for (int8_t i = 0; i < game.number_players; ++i) {
         Player *const player = &game.players[i];
         if (player->gamepad == NULL) {
             player->gamepad = gamepad;

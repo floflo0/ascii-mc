@@ -37,7 +37,7 @@
 #define WORLD_LOAD_DISTANCE (WORLD_RENDER_DISTANCE + 1)
 #define WORLD_RENDER_THREADS_NUMBER 18
 #ifndef __wasm__
-// #define WORLD_RENDER_SCHEDULER_DYNAMIC
+#define WORLD_RENDER_SCHEDULER_DYNAMIC
 #endif
 
 #define CAMERA_FOV RAD(60.0f /* deg */)
@@ -95,11 +95,7 @@
 
 // Debug
 
-#ifdef PROD
 #define GAME_DEFAULT_SHOW_DEBUG_INFO true
-#else
-#define GAME_DEFAULT_SHOW_DEBUG_INFO true
-#endif
 
 // Enable controlling the player with the keyboard.
 #ifndef PROD

@@ -961,8 +961,7 @@ typedef struct {
     int min_z, max_z;
 } WorldRenderContext;
 
-static void *world_render_thread(void *const data) NONNULL();
-
+[[gnu::nonnull]]
 static void *world_render_thread(void *const data) {
     assert(data != NULL);
 
@@ -994,9 +993,9 @@ static void *world_render_thread(void *const data) {
     return NULL;
 }
 
-void world_render(const world *const restrict self,
-                  const camera *const restrict camera,
-                  const viewport *const restrict viewport) {
+void world_render(const World *const restrict self,
+                  const Camera *const restrict camera,
+                  const Viewport *const restrict viewport) {
     assert(self != NULL);
     assert(camera != NULL);
     assert(viewport != NULL);

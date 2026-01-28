@@ -25,6 +25,17 @@ void *memset(void *s, const int c, const size_t n) {
     return original_pointer;
 }
 
+int memcmp(const void *const s1, const void *const s2, const size_t size) {
+    assert(s1 != NULL);
+    assert(s2 != NULL);
+    const char *const s1_char = (const char *)s1;
+    const char *const s2_char = (const char *)s2;
+    for (size_t i = 0; i < size; ++i) {
+        if (s1_char[i] != s2_char[i]) return s1_char[i] - s2_char[i];
+    }
+    return 0;
+}
+
 size_t strlen(const char *s) {
     assert(s != NULL);
     size_t size = 0;

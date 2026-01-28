@@ -29,11 +29,7 @@
 #define CHUNK_GENERATION_MIN_SNOW_HEIGHT_NOISE_DEPTH 1
 
 #define WORLD_SIZE 6250  // chunks
-#ifndef __wasm__
 #define WORLD_RENDER_DISTANCE 6  // chunks
-#else
-#define WORLD_RENDER_DISTANCE 4  // chunks
-#endif
 #define WORLD_LOAD_DISTANCE (WORLD_RENDER_DISTANCE + 1)
 #define WORLD_RENDER_THREADS_NUMBER 18
 #ifndef __wasm__

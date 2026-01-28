@@ -151,6 +151,14 @@ static inline v3f v3f_cross_product(const v3f v1, const v3f v2) {
     };
 }
 
+static inline v3f v3f_abs(const v3f vec) {
+    return (v3f){
+        .x = fabsf(vec.x),
+        .y = fabsf(vec.y),
+        .z = fabsf(vec.z),
+    };
+}
+
 static inline v4f v3f_to_v4f(const v3f vec) {
     return (v4f){
         .x = vec.x,

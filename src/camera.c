@@ -130,6 +130,7 @@ void camera_update_frustum_planes(Camera *const self) {
     const float sin_a = sinf(a);
     const float cos_b = cosf(b);
     const float sin_b = sinf(b);
+
     const v3f world_up = {0.0f, 1.0f, 0.0f};
     const v3f forward = camera_get_forward_direction(self);
     const v3f right = v3f_normalize(v3f_cross_product(forward, world_up));

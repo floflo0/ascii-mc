@@ -560,17 +560,18 @@ static void chunck_update_aabb(Chunk *const self) {
             for (int z = 0; z < CHUNK_SIZE; ++z) {
                 if (self->blocks[x][y][z].type != BLOCK_TYPE_AIR) {
                     self->aabb.position.y = y;
-                    break;
+                    goto end_loop;
                 }
             }
         }
     }
+end_loop:
     for (int y = CHUNK_HEIGHT - 1; y >= 0; --y) {
         for (int x = 0; x < CHUNK_SIZE; ++x) {
             for (int z = 0; z < CHUNK_SIZE; ++z) {
                 if (self->blocks[x][y][z].type != BLOCK_TYPE_AIR) {
                     self->aabb.size.y = y + 1.0f - self->aabb.position.y;
-                    break;
+                    return;
                 }
             }
         }

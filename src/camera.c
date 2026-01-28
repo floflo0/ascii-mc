@@ -195,36 +195,10 @@ static bool is_aabb_forward_plane(const Aabb *const restrict aabb,
                                   const Plane *const restrict plane) {
     assert(aabb != NULL);
     assert(plane != NULL);
-    const v3f normal = plane->normal;
-    const float distance = plane->distance;
-    const v3f position = aabb->position;
-    const float size_x = aabb->size.x;
-    const float size_y = aabb->size.y;
-    const float size_z = aabb->size.z;
-    return (v3f_dot(v3f_add(position, (v3f){0.0f, 0.0f, 0.0f}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){size_x, 0.0f, 0.0f}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){0.0f, size_y, 0.0f}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){0.0f, 0.0f, size_z}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){size_x, size_y, 0.0f}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){size_x, 0.0f, size_z}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){0.0f, size_y, size_z}), normal) -
-                    distance >=
-                0.0f ||
-            v3f_dot(v3f_add(position, (v3f){size_x, size_y, size_z}), normal) -
-                    distance >=
-                0.0f);
+    const v3f extents = v3f_mul(aabb->size, 0.5f);
+    const float r = v3f_dot(extents, v3f_abs(plane->normal));
+    const v3f center = v3f_add(aabb->position, extents);
+    return -r <= v3f_dot(plane->normal, center) - plane->distance;
 }
 
 bool camera_aabb_in_frustum(const Camera *const restrict self,

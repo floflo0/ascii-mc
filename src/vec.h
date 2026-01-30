@@ -159,15 +159,6 @@ static inline v3f v3f_abs(const v3f vec) {
     };
 }
 
-static inline v4f v3f_to_v4f(const v3f vec) {
-    return (v4f){
-        .x = vec.x,
-        .y = vec.y,
-        .z = vec.z,
-        1.0f,
-    };
-}
-
 static inline v4f v4f_sub(const v4f v1, const v4f v2) {
     return (v4f){
         .x = v1.x - v2.x,

@@ -6,22 +6,6 @@
 #include "utils.h"
 #include "vec.h"
 
-Triangle3D *triangle3D_init_v3f(
-    const v3f *const restrict v1, const v3f *const restrict v2,
-    const v3f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
-    const uint8_t edges, const Texture *const restrict texture,
-    const Color color, Triangle3DArena *const restrict arena) {
-    assert(v1 != NULL);
-    assert(v2 != NULL);
-    assert(v3 != NULL);
-    assert(arena != NULL);
-    const v4f v1_v4f = v3f_to_v4f(*v1);
-    const v4f v2_v4f = v3f_to_v4f(*v2);
-    const v4f v3_v4f = v3f_to_v4f(*v3);
-    return triangle3D_init_v4f(&v1_v4f, &v2_v4f, &v3_v4f, uv1, uv2, uv3, edges,
-                               texture, color, arena);
-}
-
 [[gnu::nonnull]] [[gnu::returns_nonnull]]
 static inline Triangle3D *triange3D_arena_alloc(Triangle3DArena *const self) {
     assert(self != NULL);

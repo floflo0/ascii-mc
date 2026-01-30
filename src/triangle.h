@@ -46,13 +46,6 @@ typedef struct {
 } TriangleIndex;
 
 [[gnu::nonnull(1, 2, 3, 10)]] [[gnu::returns_nonnull]]
-Triangle3D *triangle3D_init_v3f(
-    const v3f *const restrict v1, const v3f *const restrict v2,
-    const v3f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,
-    const uint8_t edges, const Texture *const restrict texture,
-    const Color color, Triangle3DArena *const restrict arena);
-
-[[gnu::nonnull(1, 2, 3, 10)]] [[gnu::returns_nonnull]]
 Triangle3D *triangle3D_init_v4f(
     const v4f *const restrict v1, const v4f *const restrict v2,
     const v4f *const restrict v3, const v2f uv1, const v2f uv2, const v2f uv3,

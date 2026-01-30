@@ -35,7 +35,7 @@ void mesh_clear(Mesh *const self) {
 [[gnu::nonnull]]
 static inline void mesh_get_viewed_vertices(const Mesh *const restrict self,
                                             const Camera *const restrict camera,
-                                            v3f *const restrict view_vertices) {
+                                            v4f *const restrict view_vertices) {
     assert(self != NULL);
     assert(camera != NULL);
     assert(view_vertices != NULL);
@@ -44,8 +44,7 @@ static inline void mesh_get_viewed_vertices(const Mesh *const restrict self,
     camera_get_view_matrix(camera, view_matrix);
 
     for (size_t i = 0; i < self->vertices.length; ++i) {
-        view_vertices[i] =
-            mul_m4f_v3f(view_matrix, self->vertices.array[i]).xyz;
+        view_vertices[i] = mul_m4f_v3f(view_matrix, self->vertices.array[i]);
     }
 }
 
@@ -309,12 +308,12 @@ static inline void mesh_get_viewed_triangles(
 
     triangle3D_array_init(viewed_triangles, self->triangles.length);
 
-    v3f view_vertices[self->vertices.length];
+    v4f view_vertices[self->vertices.length];
     mesh_get_viewed_vertices(self, camera, view_vertices);
 
     for (size_t i = 0; i < self->triangles.length; ++i) {
         const TriangleIndex *const triangle_index = &self->triangles.array[i];
-        Triangle3D *const triangle = triangle3D_init_v3f(
+        Triangle3D *const triangle = triangle3D_init_v4f(
             &view_vertices[triangle_index->v1],
             &view_vertices[triangle_index->v2],
             &view_vertices[triangle_index->v3], triangle_index->uv1,

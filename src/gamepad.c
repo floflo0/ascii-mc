@@ -453,6 +453,7 @@ v2f gamepad_get_stick(const Gamepad *const self, const GamepadStick stick) {
         axis_x = SDL_GAMEPAD_AXIS_RIGHTX;
         axis_y = SDL_GAMEPAD_AXIS_RIGHTY;
     } else {
+        assert(false && "unreachable");
         __builtin_unreachable();
     }
 

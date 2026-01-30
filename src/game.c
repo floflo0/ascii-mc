@@ -184,6 +184,7 @@ static inline void game_execute_command(const Command *const command) {
 
         default:
             assert(false && "unreachable");
+            __builtin_unreachable();
     }
 }
 
@@ -413,6 +414,7 @@ static inline void game_update(const float delta_time_seconds) {
 
             default:
                 assert(false && "unreachable");
+                __builtin_unreachable();
         }
         event_queue_next();
     }

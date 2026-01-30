@@ -214,6 +214,7 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                         break;                                                 \
                     }                                                          \
                     assert(false && "unreachable");                            \
+                    __builtin_unreachable();                                   \
                                                                                \
                 case 'p': {                                                    \
                     assert(padding_right_char == ' ' &&                        \
@@ -269,6 +270,7 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                         goto parse_format;                                     \
                     }                                                          \
                     assert(false && "unreachable");                            \
+                    __builtin_unreachable();                                   \
                                                                                \
                 case '-':                                                      \
                     assert(format[1] == '*');                                  \
@@ -293,6 +295,7 @@ static char *double_to_string(double value, char dest[DOUBLE_STRING_MAX_LENGTH],
                         goto parse_format;                                     \
                     }                                                          \
                     assert(false && "unreachable");                            \
+                    __builtin_unreachable();                                   \
             }                                                                  \
         }                                                                      \
     } while (0)

@@ -28,7 +28,7 @@
 #define CHUNK_GENERATION_MIN_SNOW_HEIGHT_NOISE_FREQUENCY 0.1f
 #define CHUNK_GENERATION_MIN_SNOW_HEIGHT_NOISE_DEPTH 1
 
-#define WORLD_SIZE 6250  // chunks
+#define WORLD_SIZE 6250          // chunks
 #define WORLD_RENDER_DISTANCE 6  // chunks
 #define WORLD_LOAD_DISTANCE (WORLD_RENDER_DISTANCE + 1)
 #define WORLD_RENDER_THREADS_NUMBER 18
@@ -89,12 +89,14 @@
 #define WINDOW_CLEAR_COLOR COLOR_WHITE
 #define WINDOW_CLEAR_CHAR ' '
 
+#define MOUSE_SENSIVITY 0.045f
+
 // Debug
 
 #define GAME_DEFAULT_SHOW_DEBUG_INFO true
 
 // Enable controlling the player with the keyboard.
-#ifndef PROD
+#if !defined(PROD) && !defined(__wasm__)
 #define GAME_KEYBOARD_CONTROL
 #endif
 
@@ -254,5 +256,7 @@ static_assert(0.0f <= G_FORCE);
 
 STATIC_ASSERT_IS_COLOR(WINDOW_CLEAR_COLOR);
 STATIC_ASSERT_IS_CHAR(WINDOW_CLEAR_CHAR);
+
+static_assert(MOUSE_SENSIVITY != 0.0f);
 
 STATIC_ASSERT_IS_BOOLEAN(GAME_DEFAULT_SHOW_DEBUG_INFO);

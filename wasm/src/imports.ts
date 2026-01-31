@@ -40,4 +40,8 @@ export type Imports = {
     ): void;
     JS_Gamepad_get_axis(gamepadIndex: Uint32, axisIndex: Uint8): Float;
     JS_get_gamepad_button(gamepadIndex: Uint32, button: Uint8): boolean,
+    JS_on_pointer_move(callback: Ptr): void;
+    JS_on_pointer_down(callback: Ptr): void;
+    JS_on_keydown(callback: Ptr): void;
+    JS_on_keyup(callback: Ptr): void;
 }

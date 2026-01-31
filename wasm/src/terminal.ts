@@ -22,6 +22,11 @@ export class Terminal {
     private cellHeight: number = this.lineHeight;
     private paddingY: number = 0;
     private paddingX: number = 0;
+    private isPointerLocked: boolean = false;
+    private handlePointerMove: ((event: MouseEvent) => void) | null = null;
+    private handlePointerDown: ((event: MouseEvent) => void) | null = null;
+    private handleKeydownCallback: ((keyCode: number) => void) | null = null;
+    private handleKeyup: ((event: KeyboardEvent) => void) | null = null;
 
     public constructor() {
         this.canvas = document.getElementById('terminal') as HTMLCanvasElement;
@@ -30,11 +35,16 @@ export class Terminal {
         console.assert(this.context !== null);
         this.context.textRendering = 'optimizeSpeed';
         this.setCanvasFont();
-        this.#handleResize();
-        document.addEventListener('keydown', this.#handleKeydown.bind(this));
-        const handleResize = this.#handleResize.bind(this);
+        this.handleResize();
+        document.addEventListener('keydown', this.handleKeydown.bind(this));
+        const handleResize = this.handleResize.bind(this);
         window.addEventListener('resize', handleResize);
         document.fonts.ready.then(handleResize);
+        this.canvas.addEventListener('click', this.handleClick.bind(this));
+        document.addEventListener(
+            'pointerlockchange',
+            this.handlePointerLockChange.bind(this),
+        );
     }
 
     public setContent(content: string): void {
@@ -80,23 +90,110 @@ export class Terminal {
         this.context.font = `bold ${this.fontSize}px ${FONTS}`;
     }
 
-    printMessage(message: string) {
+    private async handleClick(): Promise<void>  {
+        if (this.isPointerLocked) return;
+        this.canvas.tabIndex = 0;
+        this.canvas.focus();
+        await this.canvas.requestPointerLock();
+        this.isPointerLocked = true;
+    }
+
+    private handlePointerLockChange(): void {
+        this.isPointerLocked = document.pointerLockElement === this.canvas;
+    }
+
+    public onPointerMove(
+        callback: (movementX: number, movementY: number) => void,
+    ): void {
+        console.assert(this.handlePointerMove === null);
+        // On Firefox, if the use press both left and right click a weird
+        // PointerMoveEvent is fired. So we ignore event that contains a button
+        // change to ignore those events.
+        let previousButtons = 0;
+        this.handlePointerMove = (event: MouseEvent) => {
+            if (!this.isPointerLocked) return;
+            if (event.buttons !== previousButtons) {
+                previousButtons = event.buttons;
+                return;
+            }
+            const sensivity =
+                navigator.userAgent.includes('Firefox') ? 1.0 : 0.1;
+            callback(event.movementX * sensivity, event.movementY * sensivity);
+        };
+        this.canvas.addEventListener('mousemove', this.handlePointerMove);
+    }
+
+    public clearOnPointerMove(): void {
+        console.assert(this.handlePointerMove !== null);
+        this.canvas.removeEventListener('mousemove', this.handlePointerMove!);
+        this.handlePointerMove = null;
+    }
+
+    public onPointerDown(callback: (mouseButton: number) => void): void {
+        console.assert(this.handlePointerDown === null);
+        this.handlePointerDown = (event: MouseEvent) => {
+            event.preventDefault();
+            if (!this.isPointerLocked) return;
+            console.log(event);
+            callback(event.button);
+        };
+        this.canvas.addEventListener('mousedown', this.handlePointerDown);
+    }
+
+    public clearOnPointerDown(): void {
+        console.assert(this.handlePointerDown !== null);
+        this.canvas.removeEventListener('mousedown', this.handlePointerDown!);
+        this.handlePointerDown = null;
+    }
+
+    public onKeydown(callback: (keyCode: number) => void) {
+        console.assert(this.handleKeydownCallback === null);
+        this.handleKeydownCallback = callback;
+    }
+
+    public clearOnKeydown(): void {
+        console.assert(this.handleKeydownCallback !== null);
+        this.handleKeydownCallback = null;
+    }
+
+    public onKeyup(callback: (keyCode: number) => void) {
+        console.assert(this.handleKeyup === null);
+        this.handleKeyup = (event: KeyboardEvent) => {
+            if (!this.isPointerLocked) return;
+            callback(event.keyCode);
+        };
+        this.canvas.addEventListener('keyup', this.handleKeyup);
+    }
+
+    public clearOnKeyup(): void {
+        console.assert(this.handleKeyup !== null);
+        this.canvas.removeEventListener('keyup', this.handleKeyup!);
+        this.handleKeyup = null;
+    }
+
+    public printMessage(message: string) {
         this.setContent(message);
     }
 
-    getWidth(): number {
+    public getWidth(): number {
         return this.width;
     }
 
-    getHeight(): number {
+    public getHeight(): number {
         return this.height;
     }
 
-    readChar(): number {
+    public readChar(): number {
         return this.stdin.shift() ?? -1;
     }
 
-    #handleKeydown(event: KeyboardEvent) {
+    private handleKeydown(event: KeyboardEvent) {
+        if (!this.isPointerLocked) return;
+
+        if (this.handleKeydownCallback !== null) {
+            this.handleKeydownCallback(event.keyCode);
+        }
+
         if (event.key == 'Shift') return;
 
         if (event.key == 'Backspace') {
@@ -125,7 +222,7 @@ export class Terminal {
         this.stdin.push(event.key.charCodeAt(0));
     }
 
-    #handleResize() {
+    private handleResize() {
         const width = window.innerWidth * window.devicePixelRatio;
         const height = window.innerHeight * window.devicePixelRatio;
         this.canvas.width = width;

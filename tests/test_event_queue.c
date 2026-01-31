@@ -22,8 +22,8 @@ START_TEST(test_event_queue) {
     ck_assert(!event_queue_is_empty());
 
     event_queue_push(&(Event){
-        .type = EVENT_TYPE_BUTTON_DOWN,
-        .button_event = {.player_index = 1, .button = GAMEPAD_BUTTON_A},
+        .type = EVENT_TYPE_GAMEPAD_BUTTON_DOWN,
+        .gamepad_button_event = {.player_index = 1, .button = GAMEPAD_BUTTON_A},
     });
 
     ck_assert(!event_queue_is_empty());
@@ -49,9 +49,9 @@ START_TEST(test_event_queue) {
 
     const Event *const event3 = event_queue_get();
     ck_assert_ptr_nonnull(event3);
-    ck_assert_int_eq(event3->type, EVENT_TYPE_BUTTON_DOWN);
-    ck_assert_int_eq(event3->button_event.player_index, 1);
-    ck_assert_int_eq(event3->button_event.button, GAMEPAD_BUTTON_A);
+    ck_assert_int_eq(event3->type, EVENT_TYPE_GAMEPAD_BUTTON_DOWN);
+    ck_assert_int_eq(event3->gamepad_button_event.player_index, 1);
+    ck_assert_int_eq(event3->gamepad_button_event.button, GAMEPAD_BUTTON_A);
 
     ck_assert(!event_queue_is_empty());
 

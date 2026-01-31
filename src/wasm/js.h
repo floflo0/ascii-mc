@@ -40,3 +40,8 @@ extern float JS_Gamepad_get_axis(const uint32_t gamepad_index,
                                  const uint8_t axis_index);
 extern bool JS_get_gamepad_button(const uint32_t gamepad_index,
                                   const uint8_t button);
+
+extern void JS_on_pointer_move(void (*callback)(const int, const int));
+extern void JS_on_pointer_down(void (*callback)(const int));
+extern void JS_on_keydown(void (*callback)(const int));
+extern void JS_on_keyup(void (*callback)(const int));

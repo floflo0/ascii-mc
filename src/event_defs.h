@@ -1,6 +1,9 @@
 #pragma once
 
 #include "gamepad_defs.h"
+#ifdef __wasm__
+#include "wasm/mouse_button_defs.h"
+#endif
 
 #define CHAR_EVENT_CTRL_C 0x03
 #define CHAR_EVENT_CTRL_Z 0x1a
@@ -26,18 +29,24 @@
 #define CHAR_EVENT_KEY_COLON ':'
 
 typedef enum : uint8_t {
-    EVENT_TYPE_BUTTON_DOWN,
-    EVENT_TYPE_BUTTON_UP,
+    EVENT_TYPE_GAMEPAD_BUTTON_DOWN,
+    EVENT_TYPE_GAMEPAD_BUTTON_UP,
     EVENT_TYPE_CHAR,
     EVENT_TYPE_GAMEPAD_CONNECT,
     EVENT_TYPE_GAMEPAD_DISCONNECT,
     EVENT_TYPE_RESIZE,
+#ifdef __wasm__
+    EVENT_TYPE_MOUSE_MOVE,
+    EVENT_TYPE_MOUSE_BUTTON_DOWN,
+    EVENT_TYPE_KEY_DOWN,
+    EVENT_TYPE_KEY_UP,
+#endif
 } EventType;
 
 typedef struct {
     uint8_t player_index;
     GamepadButton button;
-} ButtonEvent;
+} GamepadButtonEvent;
 
 typedef struct {
     char chr;
@@ -47,11 +56,31 @@ typedef struct {
     Gamepad *gamepad;
 } GamepadEvent;
 
+#ifdef __wasm__
+typedef struct {
+    int movement_x;
+    int movement_y;
+} MouseMoveEvent;
+
+typedef struct {
+    MouseButton button;
+} MouseButtonEvent;
+
+typedef struct {
+    char key;
+} KeyboardEvent;
+#endif
+
 typedef struct {
     union {
-        ButtonEvent button_event;
+        GamepadButtonEvent gamepad_button_event;
         CharEvent char_event;
         GamepadEvent gamepad_event;
+#ifdef __wasm__
+        MouseMoveEvent mouse_move_event;
+        MouseButtonEvent mouse_button_event;
+        KeyboardEvent keyboard_event;
+#endif
     };
     EventType type;
 } Event;

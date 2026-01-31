@@ -16,6 +16,7 @@
 #include "log.h"
 #include "player.h"
 #include "vec.h"
+#include "wasm/mouse_and_keyboard.h"
 #include "window.h"
 #include "world.h"
 
@@ -56,6 +57,7 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
     window_init(force_tty, force_no_tty);
 
     event_queue_init();
+    mouse_and_keyboard_init();
 
     gamepad_array_init(&game.gamepads, GAMEPAD_ARRAY_DEFAULT_CAPACITY);
     gamepad_init();
@@ -72,6 +74,7 @@ void game_quit(void) {
     }
     gamepad_array_destroy(&game.gamepads);
     gamepad_quit();
+    mouse_and_keyboard_quit();
     event_queue_quit();
     world_destroy(game.world);
     window_quit();
@@ -80,7 +83,7 @@ void game_quit(void) {
 
 [[gnu::nonnull]]
 static inline void game_handle_button_down_event(
-    const ButtonEvent *const button_down_event) {
+    const GamepadButtonEvent *const button_down_event) {
     assert(button_down_event != NULL);
 
     switch (button_down_event->button) {
@@ -128,7 +131,7 @@ static inline void game_handle_button_down_event(
 
 [[gnu::nonnull]]
 static inline void game_handle_button_up_event(
-    [[maybe_unused]] const ButtonEvent *const button_up_event) {
+    [[maybe_unused]] const GamepadButtonEvent *const button_up_event) {
     assert(button_up_event != NULL);
 }
 
@@ -363,6 +366,19 @@ static inline void game_hanlde_gamepad_connect_event(Gamepad *const gamepad) {
     }
 }
 
+#ifdef __wasm__
+static inline void game_handle_mouse_move_event(
+    const MouseMoveEvent *const event) {
+    assert(event != NULL);
+    if (game.command_mode) return;
+    const v2f camera_rotation = {
+        .x = event->movement_x * -MOUSE_SENSIVITY,
+        .y = event->movement_y * -MOUSE_SENSIVITY,
+    };
+    player_rotate(&game.players[0], camera_rotation);
+}
+#endif
+
 static inline void game_update(const float delta_time_seconds) {
     window_update();
     gamepad_update();
@@ -370,12 +386,12 @@ static inline void game_update(const float delta_time_seconds) {
     while (!event_queue_is_empty()) {
         const Event *const event = event_queue_get();
         switch (event->type) {
-            case EVENT_TYPE_BUTTON_DOWN:
-                game_handle_button_down_event(&event->button_event);
+            case EVENT_TYPE_GAMEPAD_BUTTON_DOWN:
+                game_handle_button_down_event(&event->gamepad_button_event);
                 break;
 
-            case EVENT_TYPE_BUTTON_UP:
-                game_handle_button_up_event(&event->button_event);
+            case EVENT_TYPE_GAMEPAD_BUTTON_UP:
+                game_handle_button_up_event(&event->gamepad_button_event);
                 break;
 
             case EVENT_TYPE_CHAR:
@@ -411,6 +427,52 @@ static inline void game_update(const float delta_time_seconds) {
             case EVENT_TYPE_RESIZE:
                 game_handle_resize_event();
                 break;
+
+#ifdef __wasm__
+            case EVENT_TYPE_MOUSE_MOVE:
+                game_handle_mouse_move_event(&event->mouse_move_event);
+                break;
+
+            case EVENT_TYPE_MOUSE_BUTTON_DOWN:
+                if (game.command_mode) break;
+                switch (event->mouse_button_event.button) {
+                    case MOUSE_BUTTON_LEFT:
+                        player_break_block(&game.players[0], game.world);
+                        break;
+
+                    case MOUSE_BUTTON_RIGHT:
+                        player_place_block(&game.players[0], game.players,
+                                           game.number_players, game.world);
+                        break;
+
+                    case MOUSE_BUTTON_CENTER:
+                        break;
+
+                    default:
+                        assert(false && "unreachable");
+                        __builtin_unreachable();
+                }
+                break;
+
+            case EVENT_TYPE_KEY_DOWN:
+                if (game.command_mode) break;
+                if (event->keyboard_event.key == KEYBOARD_BLOCK_NEXT_KEY) {
+                    game.world->place_block++;
+                    if (game.world->place_block == BLOCK_TYPE_COUNT) {
+                        game.world->place_block = 1;
+                    }
+                } else if (event->keyboard_event.key ==
+                           KEYBOARD_BLOCK_PREVIOUS_KEY) {
+                    game.world->place_block--;
+                    if (game.world->place_block == 0) {
+                        game.world->place_block = BLOCK_TYPE_COUNT - 1;
+                    }
+                }
+                break;
+
+            case EVENT_TYPE_KEY_UP:
+                break;
+#endif
 
             default:
                 assert(false && "unreachable");
@@ -448,6 +510,36 @@ static inline void game_update(const float delta_time_seconds) {
                  gamepad_get_button(gamepad, GAMEPAD_BUTTON_B));
         }
     }
+
+#ifdef __wasm__
+    if (!game.command_mode) {
+        if (game.players[0].game_mode == PLAYER_GAME_MODE_SURVIVAL) {
+            if (keyboard_is_key_press(KEYBOARD_JUMP_KEY)) {
+                player_jump(&game.players[0]);
+            }
+        } else {
+            game.players[0].input_velocity.y +=
+                PLAYER_MOVEMENT_SPEED * delta_time_seconds *
+                (keyboard_is_key_press(KEYBOARD_JUMP_KEY) -
+                 keyboard_is_key_press(KEYBOARD_CROUCH_KEY));
+        }
+
+        v2f input = {
+            .x = keyboard_is_key_press(KEYBOARD_RIGHT_KEY) -
+                 keyboard_is_key_press(KEYBOARD_LEFT_KEY),
+            .y = keyboard_is_key_press(KEYBOARD_UP_KEY) -
+                 keyboard_is_key_press(KEYBOARD_DOWN_KEY),
+        };
+        const float input_norm = v2f_norm(input);
+        if (input_norm > 1.0f) {
+            input = v2f_div(input, input_norm);
+        }
+        const float player_velocity =
+            PLAYER_MOVEMENT_SPEED * delta_time_seconds;
+        game.players[0].input_velocity.x += input.x * player_velocity;
+        game.players[0].input_velocity.z += input.y * player_velocity;
+    }
+#endif
 
     for (uint8_t i = 0; i < game.number_players; ++i) {
         player_update(&game.players[i], game.world, delta_time_seconds);
@@ -639,6 +731,8 @@ static inline void game_loop(void) {
 #ifdef __wasm__
     if (game.running) {
         JS_requestAnimationFrame(game_loop);
+    } else {
+        game_quit();
     }
 #elifdef GAME_MAX_FRAMERATE
     const uint64_t delta_time_microseconds =

@@ -321,8 +321,8 @@ static void gamepad_handle_button_event(const Gamepad *const self,
                                         const EventType event_type,
                                         const GamepadButton button) {
     assert(self != NULL);
-    assert(event_type == EVENT_TYPE_BUTTON_DOWN ||
-           event_type == EVENT_TYPE_BUTTON_UP);
+    assert(event_type == EVENT_TYPE_GAMEPAD_BUTTON_DOWN ||
+           event_type == EVENT_TYPE_GAMEPAD_BUTTON_UP);
     assert(button < GAMEPAD_BUTTONS_COUNT);
 
     const int8_t player_index = self->player_index;
@@ -333,7 +333,7 @@ static void gamepad_handle_button_event(const Gamepad *const self,
 
     event_queue_push(&(Event){
         .type = event_type,
-        .button_event =
+        .gamepad_button_event =
             {
                 .player_index = player_index,
                 .button = button,
@@ -377,11 +377,11 @@ void gamepad_update(void) {
             if (new_button_state != gamepad->button_states[button]) {
                 gamepad->button_states[button] = new_button_state;
                 if (new_button_state) {
-                    gamepad_handle_button_event(gamepad, EVENT_TYPE_BUTTON_DOWN,
-                                                button);
+                    gamepad_handle_button_event(
+                        gamepad, EVENT_TYPE_GAMEPAD_BUTTON_DOWN, button);
                 } else {
-                    gamepad_handle_button_event(gamepad, EVENT_TYPE_BUTTON_UP,
-                                                button);
+                    gamepad_handle_button_event(
+                        gamepad, EVENT_TYPE_GAMEPAD_BUTTON_UP, button);
                 }
             }
         }

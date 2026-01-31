@@ -192,8 +192,8 @@ static void handle_button_event(const SDL_JoystickID joystick_id,
                                 const EventType event_type,
                                 const GamepadButton button) {
     assert(joystick_id != 0);
-    assert(event_type == EVENT_TYPE_BUTTON_DOWN ||
-           event_type == EVENT_TYPE_BUTTON_UP);
+    assert(event_type == EVENT_TYPE_GAMEPAD_BUTTON_DOWN ||
+           event_type == EVENT_TYPE_GAMEPAD_BUTTON_UP);
     assert(button < GAMEPAD_BUTTONS_COUNT);
 
     const int player_index = SDL_GetGamepadPlayerIndexForID(joystick_id);
@@ -205,7 +205,7 @@ static void handle_button_event(const SDL_JoystickID joystick_id,
 
     event_queue_push(&(Event){
         .type = event_type,
-        .button_event =
+        .gamepad_button_event =
             {
                 .player_index = player_index,
                 .button = button,
@@ -222,18 +222,18 @@ static inline void handle_gamepad_axis_motion_event(
     assert(joystick_id != 0);
     if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER) {
         if (axis_value == GAMEPAD_AXIS_MAX) {
-            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_DOWN,
+            handle_button_event(joystick_id, EVENT_TYPE_GAMEPAD_BUTTON_DOWN,
                                 GAMEPAD_BUTTON_ZL);
         } else if (axis_value == 0) {
-            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_UP,
+            handle_button_event(joystick_id, EVENT_TYPE_GAMEPAD_BUTTON_UP,
                                 GAMEPAD_BUTTON_ZL);
         }
     } else if (axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
         if (axis_value == GAMEPAD_AXIS_MAX) {
-            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_DOWN,
+            handle_button_event(joystick_id, EVENT_TYPE_GAMEPAD_BUTTON_DOWN,
                                 GAMEPAD_BUTTON_ZR);
         } else if (axis_value == 0) {
-            handle_button_event(joystick_id, EVENT_TYPE_BUTTON_UP,
+            handle_button_event(joystick_id, EVENT_TYPE_GAMEPAD_BUTTON_UP,
                                 GAMEPAD_BUTTON_ZR);
         }
     }
@@ -322,13 +322,13 @@ static void gamepad_update_internal(void) {
 
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
                 handle_button_event(
-                    event.gbutton.which, EVENT_TYPE_BUTTON_DOWN,
+                    event.gbutton.which, EVENT_TYPE_GAMEPAD_BUTTON_DOWN,
                     sdl_gamepad_button_to_gamepad_button(event.gbutton.button));
                 break;
 
             case SDL_EVENT_GAMEPAD_BUTTON_UP:
                 handle_button_event(
-                    event.gbutton.which, EVENT_TYPE_BUTTON_UP,
+                    event.gbutton.which, EVENT_TYPE_GAMEPAD_BUTTON_UP,
                     sdl_gamepad_button_to_gamepad_button(event.gbutton.button));
                 break;
 

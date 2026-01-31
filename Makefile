@@ -79,6 +79,8 @@ ifeq ($(PLATFORM), wasm)
 		-Wl,--export=wasm_main                             \
 		-Wl,--export=run_callback                          \
 		-Wl,--export=run_callback_uint32                   \
+		-Wl,--export=run_callback_int                      \
+		-Wl,--export=run_callback_int_int                  \
 		-Wl,--import-memory                                \
 		-Wl,-z,stack-size=8388608
 	ifeq ($(BUILD_TYPE), release)

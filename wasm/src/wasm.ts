@@ -1,5 +1,12 @@
 import { Exit } from './exit';
-import type { Exports, RunCallback, RunCallbackUint32, WasmMain } from './exports';
+import type {
+    Exports,
+    RunCallback,
+    RunCallbackInt,
+    RunCallbackIntInt,
+    RunCallbackUint32,
+    WasmMain,
+} from './exports';
 import type { Imports } from './imports';
 import { Terminal } from './terminal';
 import type { Ptr, CharPtr } from './types';
@@ -23,6 +30,12 @@ export class Wasm {
     };
     private runCallbackUint32: RunCallbackUint32 = (_callback) => {
         console.assert(false, "runCallbackUint32 was not loaded");
+    };
+    private runCallbackInt: RunCallbackInt = (_callback) => {
+        console.assert(false, "runCallbackInt was not loaded");
+    };
+    private runCallbackIntInt: RunCallbackIntInt = (_callback) => {
+        console.assert(false, "runCallbackIntInt was not loaded");
     };
 
     private constructor(memory: WebAssembly.Memory) {
@@ -69,10 +82,14 @@ export class Wasm {
             wasm_main,
             run_callback,
             run_callback_uint32,
+            run_callback_int,
+            run_callback_int_int,
         } = instance.exports as Exports;
         this.mainWasm = wasm_main;
         this.runCallback = run_callback;
         this.runCallbackUint32 = run_callback_uint32;
+        this.runCallbackInt = run_callback_int;
+        this.runCallbackIntInt = run_callback_int_int;
     }
 
     private buildEnv(): Imports {
@@ -199,6 +216,42 @@ export class Wasm {
                 const gamepad = navigator.getGamepads()[gamepadIndex];
                 console.assert(gamepad !== null);
                 return gamepad!.buttons[button].pressed;
+            },
+            JS_on_pointer_move: (callback) => {
+                if (callback === NULL) {
+                    this.terminal.clearOnPointerMove();
+                    return;
+                }
+                this.terminal.onPointerMove((movementX, movementY) => {
+                    this.runCallbackIntInt(callback, movementX, movementY);
+                });
+            },
+            JS_on_pointer_down: (callback) => {
+                if (callback === NULL) {
+                    this.terminal.clearOnPointerDown();
+                    return;
+                }
+                this.terminal.onPointerDown((mouseButton: number) => {
+                    this.runCallbackInt(callback, mouseButton);
+                });
+            },
+            JS_on_keydown: (callback) => {
+                if (callback === NULL) {
+                    this.terminal.clearOnKeydown();
+                    return;
+                }
+                this.terminal.onKeydown((keyCode: number) => {
+                    this.runCallbackInt(callback, keyCode);
+                });
+            },
+            JS_on_keyup: (callback) => {
+                if (callback === NULL) {
+                    this.terminal.clearOnKeyup();
+                    return;
+                }
+                this.terminal.onKeyup((keyCode: number) => {
+                    this.runCallbackInt(callback, keyCode);
+                });
             },
         };
     }

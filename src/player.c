@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "camera.h"
+#include "collision.h"
 #include "config.h"
 #include "gamepad.h"
 #include "log.h"

@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "player_game_mode.h"
+#include "player_game_mode_defs.h"
 #include "vec_defs.h"
 
 typedef enum : uint8_t {

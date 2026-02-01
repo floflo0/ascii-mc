@@ -2,12 +2,7 @@
 
 #include <stdint.h>
 
-typedef struct {
-    int x_offset;
-    int y_offset;
-    int width;
-    int height;
-} Viewport;
+#include "viewport_defs.h"
 
 [[gnu::nonnull(1)]]
 void viewport_from_player_index(Viewport *const viewport,

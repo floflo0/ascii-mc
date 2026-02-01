@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "color.h"
-#include "player_game_mode.h"
+#include "player_game_mode_defs.h"
 #include "utils.h"
 
 #define DEFAULT_CHARACTER_RATIO 0.5f

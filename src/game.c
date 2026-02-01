@@ -83,7 +83,7 @@ void game_quit(void) {
 }
 
 [[gnu::nonnull]]
-static inline void game_handle_button_down_event(
+static inline void game_handle_gamepad_button_down_event(
     const GamepadButtonEvent *const button_down_event) {
     assert(button_down_event != NULL);
 
@@ -131,7 +131,7 @@ static inline void game_handle_button_down_event(
 }
 
 [[gnu::nonnull]]
-static inline void game_handle_button_up_event(
+static inline void game_handle_gamepad_button_up_event(
     [[maybe_unused]] const GamepadButtonEvent *const button_up_event) {
     assert(button_up_event != NULL);
 }
@@ -354,9 +354,10 @@ static inline void game_handle_resize_event(void) {
 }
 
 [[gnu::nonnull]]
-static inline void game_hanlde_gamepad_connect_event(Gamepad *const gamepad) {
-    assert(gamepad != NULL);
-
+static inline void game_handle_gamepad_connect_event(
+    const GamepadEvent *const gamepad_event) {
+    assert(gamepad_event != NULL);
+    Gamepad *const gamepad = gamepad_event->gamepad;
     gamepad_array_push(&game.gamepads, gamepad);
     for (int8_t i = 0; i < game.number_players; ++i) {
         Player *const player = &game.players[i];
@@ -370,32 +371,51 @@ static inline void game_hanlde_gamepad_connect_event(Gamepad *const gamepad) {
     }
 }
 
+[[gnu::nonnull]]
+static inline void game_handle_gamepad_disconnect_event(
+    const GamepadEvent *const gamepad_event) {
+    assert(gamepad_event != NULL);
+    Gamepad *const gamepad = gamepad_event->gamepad;
+    const int8_t player_index = gamepad_get_player_index(gamepad);
+    if (player_index != -1) {
+        log_debugf("remove gamepad '%s' from player %d",
+                   gamepad_get_name(gamepad), player_index);
+        game.players[player_index].gamepad = NULL;
+    }
+    for (size_t i = 0; i < game.gamepads.length; ++i) {
+        if (game.gamepads.array[i] == gamepad) {
+            gamepad_array_remove(&game.gamepads, i);
+            break;
+        }
+    }
+    gamepad_destroy(gamepad);
+}
+
 #ifdef __wasm__
 static inline void game_handle_mouse_move_event(
-    const MouseMoveEvent *const event) {
-    assert(event != NULL);
+    const MouseMoveEvent *const mouse_move_event) {
+    assert(mouse_move_event != NULL);
     if (game.command_mode) return;
     const v2f camera_rotation = {
-        .x = event->movement_x * -MOUSE_SENSIVITY,
-        .y = event->movement_y * -MOUSE_SENSIVITY,
+        .x = mouse_move_event->movement_x * -MOUSE_SENSIVITY,
+        .y = mouse_move_event->movement_y * -MOUSE_SENSIVITY,
     };
     player_rotate(&game.players[0], camera_rotation);
 }
 #endif
 
-static inline void game_update(const float delta_time_seconds) {
-    window_update();
-    gamepad_update();
-
+static inline void game_handle_events(void) {
     while (!event_queue_is_empty()) {
         const Event *const event = event_queue_get();
         switch (event->type) {
             case EVENT_TYPE_GAMEPAD_BUTTON_DOWN:
-                game_handle_button_down_event(&event->gamepad_button_event);
+                game_handle_gamepad_button_down_event(
+                    &event->gamepad_button_event);
                 break;
 
             case EVENT_TYPE_GAMEPAD_BUTTON_UP:
-                game_handle_button_up_event(&event->gamepad_button_event);
+                game_handle_gamepad_button_up_event(
+                    &event->gamepad_button_event);
                 break;
 
             case EVENT_TYPE_CHAR:
@@ -403,28 +423,11 @@ static inline void game_update(const float delta_time_seconds) {
                 break;
 
             case EVENT_TYPE_GAMEPAD_CONNECT:
-                game_hanlde_gamepad_connect_event(event->gamepad_event.gamepad);
+                game_handle_gamepad_connect_event(&event->gamepad_event);
                 break;
 
             case EVENT_TYPE_GAMEPAD_DISCONNECT: {
-                Gamepad *const gamepad = event->gamepad_event.gamepad;
-                log_debugf("processing disconnect event for gamepad '%s'",
-                           gamepad_get_name(gamepad));
-                const int8_t player_index = gamepad_get_player_index(gamepad);
-                log_debugf("gamepad '%s' player_index = %d",
-                           gamepad_get_name(gamepad), player_index);
-                if (player_index != -1) {
-                    log_debugf("remove gamepad '%s' from player %d",
-                               gamepad_get_name(gamepad), player_index);
-                    game.players[player_index].gamepad = NULL;
-                }
-                for (size_t i = 0; i < game.gamepads.length; ++i) {
-                    if (game.gamepads.array[i] == gamepad) {
-                        gamepad_array_remove(&game.gamepads, i);
-                        break;
-                    }
-                }
-                gamepad_destroy(gamepad);
+                game_handle_gamepad_disconnect_event(&event->gamepad_event);
                 break;
             }
 
@@ -484,6 +487,12 @@ static inline void game_update(const float delta_time_seconds) {
         }
         event_queue_next();
     }
+}
+
+static inline void game_update(const float delta_time_seconds) {
+    window_update();
+    gamepad_update();
+    game_handle_events();
 
     for (uint8_t i = 0; i < game.number_players; ++i) {
         Player *const player = &game.players[i];

@@ -7,7 +7,7 @@
 #include "player_game_mode.h"
 #include "utils.h"
 
-#define CHARACTER_RATIO (8.0f / 16.0f)
+#define DEFAULT_CHARACTER_RATIO 0.5f
 
 #define CHUNK_SIZE 16                            // m
 #define CHUNK_HEIGHT 256                         // m
@@ -126,7 +126,7 @@
                   value == COLOR_MAGENTA || value == COLOR_CYAN ||           \
                   value == COLOR_WHITE)
 
-static_assert(0.0f < CHARACTER_RATIO);
+static_assert(0.0f < DEFAULT_CHARACTER_RATIO);
 
 STATIC_ASSERT_IS_INTEGER(CHUNK_SIZE);
 static_assert(0 < CHUNK_SIZE && CHUNK_SIZE <= 256,

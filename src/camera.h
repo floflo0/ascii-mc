@@ -5,7 +5,8 @@
 
 [[gnu::nonnull(1)]]
 void camera_init(Camera *const self, const v3f position, const float yaw,
-                 const float pitch, const float aspect_ratio);
+                 const float pitch, const float aspect_ratio,
+                 const float character_ratio);
 
 [[gnu::nonnull]]
 void camera_get_view_matrix(const Camera *const restrict self, m4f view_matrix);
@@ -17,7 +18,8 @@ void camera_get_rotation_matrix(const Camera *const self, m4f rotation_matrix);
 v3f camera_get_forward_direction(const Camera *const self);
 
 [[gnu::nonnull(1)]]
-void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio);
+void camera_update_aspect_ratio_and_character_ratio(
+    Camera *const self, const float aspect_ratio, const float character_ratio);
 
 [[gnu::nonnull(1)]]
 void camera_rotate(Camera *const self, const v2f rotation);

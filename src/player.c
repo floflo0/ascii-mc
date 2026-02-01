@@ -204,9 +204,10 @@ static inline void player_generate_mesh(Player *const self) {
 
 void player_init(Player *const restrict self, const int8_t player_index,
                  const uint8_t number_players, Gamepad *const restrict gamepad,
-                 World *const restrict world) {
+                 World *const restrict world, const float character_ratio) {
     assert(self != NULL);
     assert(world != NULL);
+    assert(character_ratio > 0.0f);
 
     self->player_index = player_index;
 
@@ -228,7 +229,8 @@ void player_init(Player *const restrict self, const int8_t player_index,
     self->last_grounded_time_microseconds = 0;
     self->can_jump = false;
 
-    viewport_from_player_index(&self->viewport, player_index, number_players);
+    viewport_from_player_index(&self->viewport, player_index, number_players,
+                               character_ratio);
 
     camera_init(&self->camera,
                 (v3f){
@@ -237,7 +239,8 @@ void player_init(Player *const restrict self, const int8_t player_index,
                     .z = self->position.z,
                 },
                 PLAYER_DEFAULT_YAW, PLAYER_DEFAULT_PITCH,
-                (float)self->viewport.width / self->viewport.height);
+                (float)self->viewport.width / self->viewport.height,
+                character_ratio);
 
     mesh_init(&self->mesh, 8, 12);
     player_generate_mesh(self);
@@ -527,7 +530,6 @@ void player_render(const Player *const restrict self,
     assert(self != NULL);
     assert(camera != NULL);
     assert(viewport != NULL);
-
     mesh_render(&self->mesh, camera, viewport);
 }
 
@@ -709,14 +711,17 @@ void player_render_ui(const Player *const restrict self,
     }
 }
 
-void player_update_viewport(Player *const self, const uint8_t number_players) {
+void player_update_viewport(Player *const self, const uint8_t number_players,
+                            const float character_ratio) {
     assert(self != NULL);
     assert(0 < number_players && number_players <= 4);
+    assert(character_ratio > 0.0f);
 
     viewport_from_player_index(&self->viewport, self->player_index,
-                               number_players);
-    camera_set_aspect_ratio(
-        &self->camera, (float)self->viewport.width / self->viewport.height);
+                               number_players, character_ratio);
+    camera_update_aspect_ratio_and_character_ratio(
+        &self->camera, (float)self->viewport.width / self->viewport.height,
+        character_ratio);
 }
 
 bool player_get_targeted_block(const Player *const restrict self,

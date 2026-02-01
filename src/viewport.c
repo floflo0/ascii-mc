@@ -1,11 +1,11 @@
 #include "viewport.h"
 
-#include "config.h"
 #include "window.h"
 
 void viewport_from_player_index(Viewport *const viewport,
                                 const int8_t player_index,
-                                const uint8_t number_players) {
+                                const uint8_t number_players,
+                                const float character_ratio) {
     assert(viewport != NULL);
     assert(0 < number_players && number_players <= 4);
     assert(player_index < number_players);
@@ -23,7 +23,7 @@ void viewport_from_player_index(Viewport *const viewport,
     }
 
     const bool window_is_landscape =
-        CHARACTER_RATIO * window.width / window.height >= 1.0f;
+        character_ratio * window.width / window.height >= 1.0f;
     const int half_width = window.width / 2;
     const int half_height = window.height / 2;
 

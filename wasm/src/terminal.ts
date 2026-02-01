@@ -16,6 +16,8 @@ export class Terminal {
     private readonly stdin: number[] = [];
     private width: number = -1;
     private height: number = -1;
+    private pixelWidth: number = -1;
+    private pixelHeight: number = -1;
     private fontSize: number = FONT_SIZE;
     private lineHeight: number = LINE_HEIGHT;
     private cellWidth: number = 0;
@@ -183,6 +185,14 @@ export class Terminal {
         return this.height;
     }
 
+    public getPixelWidth(): number {
+        return this.pixelWidth;
+    }
+
+    public getPixelHeight(): number {
+        return this.pixelHeight;
+    }
+
     public readChar(): number {
         return this.stdin.shift() ?? -1;
     }
@@ -223,19 +233,21 @@ export class Terminal {
     }
 
     private handleResize() {
-        const width = window.innerWidth * window.devicePixelRatio;
-        const height = window.innerHeight * window.devicePixelRatio;
-        this.canvas.width = width;
-        this.canvas.height = height;
+        this.pixelWidth = window.innerWidth * window.devicePixelRatio;
+        this.pixelHeight = window.innerHeight * window.devicePixelRatio;
+        this.canvas.width = this.pixelWidth;
+        this.canvas.height = this.pixelHeight;
         this.fontSize = FONT_SIZE * window.devicePixelRatio;
         this.lineHeight = FONT_SIZE * window.devicePixelRatio;
         this.setCanvasFont();
         const measure = this.context.measureText('A');
         this.cellWidth = measure.width;
         this.cellHeight = this.lineHeight;
-        this.width = Math.floor(width / this.cellWidth);
-        this.height = Math.floor(height / this.cellHeight);
-        this.paddingX = (width - (this.width * this.cellWidth)) * 0.5;
-        this.paddingY = (height - (this.height * this.cellHeight)) * 0.5;
+        this.width = Math.floor(this.pixelWidth / this.cellWidth);
+        this.height = Math.floor(this.pixelHeight / this.cellHeight);
+        this.paddingX =
+            (this.pixelWidth - (this.width * this.cellWidth)) * 0.5;
+        this.paddingY =
+            (this.pixelHeight - (this.height * this.cellHeight)) * 0.5;
     }
 }

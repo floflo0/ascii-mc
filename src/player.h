@@ -30,7 +30,7 @@ typedef struct {
 [[gnu::nonnull(1, 5)]]
 void player_init(Player *const restrict self, const int8_t player_index,
                  const uint8_t number_players, Gamepad *const restrict gamepad,
-                 World *const restrict world);
+                 World *const restrict world, const float character_ratio);
 
 [[gnu::nonnull]]
 void player_destroy(Player *const self);
@@ -56,7 +56,8 @@ void player_render_ui(const Player *const restrict self,
                       const World *const restrict world);
 
 [[gnu::nonnull(1)]]
-void player_update_viewport(Player *const self, const uint8_t number_players);
+void player_update_viewport(Player *const self, const uint8_t number_players,
+                            const float character_ratio);
 
 [[gnu::nonnull]]
 bool player_get_targeted_block(const Player *const restrict self,

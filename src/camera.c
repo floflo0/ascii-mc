@@ -18,7 +18,7 @@ static void camera_update_projection_matrix(Camera *const self) {
     self->projection_matrix[3] = 0.0f;
 
     self->projection_matrix[4] = 0.0f;
-    self->projection_matrix[5] = d * CHARACTER_RATIO;
+    self->projection_matrix[5] = d * self->character_ratio;
     self->projection_matrix[6] = 0.0f;
     self->projection_matrix[7] = 0.0f;
 
@@ -34,12 +34,15 @@ static void camera_update_projection_matrix(Camera *const self) {
 }
 
 void camera_init(Camera *const self, const v3f position, const float yaw,
-                 const float pitch, const float aspect_ratio) {
+                 const float pitch, const float aspect_ratio,
+                 const float character_ratio) {
     assert(self != NULL);
+    assert(character_ratio > 0.0f);
     self->position = position;
     self->yaw = yaw;
     self->pitch = pitch;
     self->aspect_ratio = aspect_ratio;
+    self->character_ratio = character_ratio;
     camera_update_projection_matrix(self);
 
     self->frustum_planes_in_camera_space.near.normal = (v3f){0.0f, 0.0f, 1.0f};
@@ -86,9 +89,13 @@ v3f camera_get_forward_direction(const Camera *const self) {
     };
 }
 
-void camera_set_aspect_ratio(Camera *const self, const float aspect_ratio) {
+void camera_update_aspect_ratio_and_character_ratio(
+    Camera *const self, const float aspect_ratio, const float character_ratio) {
     assert(self != NULL);
+    assert(aspect_ratio > 0.0f);
+    assert(character_ratio > 0.0f);
     self->aspect_ratio = aspect_ratio;
+    self->character_ratio = character_ratio;
     camera_update_projection_matrix(self);
 }
 
@@ -124,7 +131,7 @@ void camera_update_frustum_planes(Camera *const self) {
     assert(self != NULL);
 
     const float d = tanf(CAMERA_FOV * 0.5f);
-    const float a = atanf(d / CHARACTER_RATIO);
+    const float a = atanf(d / self->character_ratio);
     const float b = atanf(d * self->aspect_ratio);
     const float cos_a = cosf(a);
     const float sin_a = sinf(a);

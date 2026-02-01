@@ -22,6 +22,8 @@ export type Imports = {
     JS_get_memory_size(): SizeT;
     JS_get_terminal_width(): Int
     JS_get_terminal_height(): Int
+    JS_get_terminal_pixel_width(): Int
+    JS_get_terminal_pixel_height(): Int
     _exit(status: Int): never;
     JS_ongamepadconnected(callback: Ptr): void;
     JS_ongamepaddisconnected(callback: Ptr): void;

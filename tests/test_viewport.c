@@ -1,11 +1,10 @@
 #include "test_viewport.h"
 
-#include "config.h"
 #include "test.h"
 #include "viewport.h"
 #include "window.h"
 
-static_assert(CHARACTER_RATIO > 0.1f);
+#define CHARACTER_RATIO 0.5f
 
 static void setup_landscape(void) {
     window.is_init = true;
@@ -25,7 +24,7 @@ static void teardown(void) {
 
 START_TEST(test_player_0_with_1_player_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 1);
+    viewport_from_player_index(&viewport, 0, 1, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -36,7 +35,7 @@ END_TEST
 
 START_TEST(test_player_0_with_1_player_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 1);
+    viewport_from_player_index(&viewport, 0, 1, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -47,7 +46,7 @@ END_TEST
 
 START_TEST(test_player_0_with_2_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 2);
+    viewport_from_player_index(&viewport, 0, 2, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -58,7 +57,7 @@ END_TEST
 
 START_TEST(test_player_0_with_2_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 2);
+    viewport_from_player_index(&viewport, 0, 2, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -69,7 +68,7 @@ END_TEST
 
 START_TEST(test_player_1_with_2_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 2);
+    viewport_from_player_index(&viewport, 1, 2, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 51);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -80,7 +79,7 @@ END_TEST
 
 START_TEST(test_player_1_with_2_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 2);
+    viewport_from_player_index(&viewport, 1, 2, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 51);
@@ -91,7 +90,7 @@ END_TEST
 
 START_TEST(test_player_0_with_3_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 3);
+    viewport_from_player_index(&viewport, 0, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -102,7 +101,7 @@ END_TEST
 
 START_TEST(test_player_0_with_3_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 3);
+    viewport_from_player_index(&viewport, 0, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -113,7 +112,7 @@ END_TEST
 
 START_TEST(test_player_1_with_3_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 3);
+    viewport_from_player_index(&viewport, 1, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 51);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -124,7 +123,7 @@ END_TEST
 
 START_TEST(test_player_1_with_3_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 3);
+    viewport_from_player_index(&viewport, 1, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 51);
@@ -135,7 +134,7 @@ END_TEST
 
 START_TEST(test_player_2_with_3_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 2, 3);
+    viewport_from_player_index(&viewport, 2, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 51);
     ck_assert_int_eq(viewport.y_offset, 6);
@@ -146,7 +145,7 @@ END_TEST
 
 START_TEST(test_player_2_with_3_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 2, 3);
+    viewport_from_player_index(&viewport, 2, 3, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 6);
     ck_assert_int_eq(viewport.y_offset, 51);
@@ -157,7 +156,7 @@ END_TEST
 
 START_TEST(test_player_0_with_4_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 4);
+    viewport_from_player_index(&viewport, 0, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -168,7 +167,7 @@ END_TEST
 
 START_TEST(test_player_0_with_4_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 0, 4);
+    viewport_from_player_index(&viewport, 0, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -179,7 +178,7 @@ END_TEST
 
 START_TEST(test_player_1_with_4_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 4);
+    viewport_from_player_index(&viewport, 1, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 51);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -190,7 +189,7 @@ END_TEST
 
 START_TEST(test_player_1_with_4_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 1, 4);
+    viewport_from_player_index(&viewport, 1, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 6);
     ck_assert_int_eq(viewport.y_offset, 0);
@@ -201,7 +200,7 @@ END_TEST
 
 START_TEST(test_player_2_with_4_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 2, 4);
+    viewport_from_player_index(&viewport, 2, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 6);
@@ -212,7 +211,7 @@ END_TEST
 
 START_TEST(test_player_2_with_4_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 2, 4);
+    viewport_from_player_index(&viewport, 2, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 0);
     ck_assert_int_eq(viewport.y_offset, 51);
@@ -223,7 +222,7 @@ END_TEST
 
 START_TEST(test_player_3_with_4_players_window_landscape) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 3, 4);
+    viewport_from_player_index(&viewport, 3, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 51);
     ck_assert_int_eq(viewport.y_offset, 6);
@@ -234,7 +233,7 @@ END_TEST
 
 START_TEST(test_player_3_with_4_players_window_portrait) {
     Viewport viewport;
-    viewport_from_player_index(&viewport, 3, 4);
+    viewport_from_player_index(&viewport, 3, 4, CHARACTER_RATIO);
 
     ck_assert_int_eq(viewport.x_offset, 6);
     ck_assert_int_eq(viewport.y_offset, 51);

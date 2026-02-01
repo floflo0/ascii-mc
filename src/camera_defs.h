@@ -12,6 +12,7 @@ typedef struct {
     v3f position;
     float yaw, pitch;
     float aspect_ratio;
+    float character_ratio;
     union {
         struct {
             Plane near;

@@ -26,6 +26,7 @@ typedef struct {
     Pixel *pixels;
     char *display_buffer;
     v2i cursor_position;
+    float character_ratio;
 #ifndef __wasm__
     struct termios old_attr;
 #endif

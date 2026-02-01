@@ -24,6 +24,8 @@ extern size_t JS_get_memory_size(void);
 
 extern int JS_get_terminal_width(void);
 extern int JS_get_terminal_height(void);
+extern int JS_get_terminal_pixel_width(void);
+extern int JS_get_terminal_pixel_height(void);
 
 extern void JS_ongamepadconnected(void (*callback)(const uint32_t));
 extern void JS_ongamepaddisconnected(void (*callback)(const uint32_t));

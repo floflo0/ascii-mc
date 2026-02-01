@@ -71,18 +71,28 @@ static void window_restore_terminal_attr(void) {
 
 [[gnu::nonnull]]
 static void get_terminal_size(int *const restrict width,
-                              int *const restrict height) {
+                              int *const restrict height,
+                              float *const restrict character_ratio) {
     assert(width != NULL);
     assert(height != NULL);
+    assert(character_ratio != NULL);
 
     struct winsize window_size;
-    // TODO: use ws_xpixel and ws_ypixel to compute the character ratio
     if (ioctl(WINDOW_FD, TIOCGWINSZ, &window_size)) {
         log_errorf_errno("failed to get the terminal size");
         exit(EXIT_FAILURE);
     }
     *width = window_size.ws_col;
     *height = window_size.ws_row;
+
+    const int ws_xpixel = window_size.ws_xpixel;
+    const int ws_ypixel = window_size.ws_ypixel;
+    if (ws_xpixel == 0 || ws_ypixel == 0) {
+        *character_ratio = DEFAULT_CHARACTER_RATIO;
+    } else {
+        *character_ratio =
+            ((float)ws_xpixel / *width) / ((float)ws_ypixel / *height);
+    }
 }
 
 static void window_show_cursor(void) {
@@ -142,8 +152,9 @@ void window_init(const bool force_tty, const bool force_no_tty) {
         log_debugf("running in a tty: %s", BOOL_TO_STR(window.is_run_in_tty));
     }
 
-    get_terminal_size(&window.width, &window.height);
+    get_terminal_size(&window.width, &window.height, &window.character_ratio);
     log_debugf("window size: (%d, %d)", window.width, window.height);
+    log_debugf("window character ratio: %.2f", window.character_ratio);
 
     const size_t window_size = window.width * window.height;
     window.pixels = malloc_or_exit(sizeof(*window.pixels) * window_size,
@@ -230,10 +241,14 @@ void window_quit(void) {
 static inline void window_detect_resize(void) {
     assert(window.is_init);
     int width, height;
-    get_terminal_size(&width, &height);
+    float character_ratio;
+    get_terminal_size(&width, &height, &character_ratio);
     if (window.width != width || window.height != height) {
         log_debugf("resize window from (%d, %d) to (%d, %d)", window.width,
                    window.height, width, height);
+        log_debugf("update window character ratio from %.2f to %.2f",
+                   window.character_ratio, character_ratio);
+        window.character_ratio = character_ratio;
 #ifndef __wasm__
         const size_t old_window_size = window.width * window.height;
         for (size_t i = 0; i < old_window_size; ++i) {

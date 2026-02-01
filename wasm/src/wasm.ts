@@ -129,6 +129,8 @@ export class Wasm {
             JS_get_memory_size: () => this.memory.buffer.byteLength,
             JS_get_terminal_width: () => this.terminal.getWidth(),
             JS_get_terminal_height: () => this.terminal.getHeight(),
+            JS_get_terminal_pixel_width: () => this.terminal.getPixelWidth(),
+            JS_get_terminal_pixel_height: () => this.terminal.getPixelHeight(),
             _exit: (status) => {
                 throw new Exit(status);
             },

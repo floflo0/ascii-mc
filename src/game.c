@@ -64,7 +64,8 @@ void game_init(const uint8_t number_players, const uint32_t world_seed,
 
     game.number_players = number_players;
     for (uint8_t i = 0; i < number_players; ++i) {
-        player_init(&game.players[i], i, game.number_players, NULL, game.world);
+        player_init(&game.players[i], i, game.number_players, NULL, game.world,
+                    window.character_ratio);
     }
 }
 
@@ -148,9 +149,11 @@ static inline void game_add_player_command(void) {
 
     const uint8_t new_number_players = game.number_players + 1;
     player_init(&game.players[game.number_players], game.number_players,
-                new_number_players, gamepad, game.world);
+                new_number_players, gamepad, game.world,
+                window.character_ratio);
     for (uint8_t i = 0; i < game.number_players; ++i) {
-        player_update_viewport(&game.players[i], new_number_players);
+        player_update_viewport(&game.players[i], new_number_players,
+                               window.character_ratio);
     }
     game.number_players = new_number_players;
 }
@@ -345,7 +348,8 @@ static inline void game_handle_char_event(const CharEvent *const char_event) {
 static inline void game_handle_resize_event(void) {
     assert(window.is_init);
     for (uint8_t i = 0; i < game.number_players; ++i) {
-        player_update_viewport(&game.players[i], game.number_players);
+        player_update_viewport(&game.players[i], game.number_players,
+                               window.character_ratio);
     }
 }
 
@@ -590,7 +594,7 @@ static inline void game_render_player_screens_borders(void) {
     if (game.number_players == 1) return;
 
     const bool window_is_landscape =
-        CHARACTER_RATIO * window.width / window.height >= 1.0f;
+        window.character_ratio * window.width / window.height >= 1.0f;
 
     const int half_width = window.width / 2;
     const int half_height = window.height / 2;

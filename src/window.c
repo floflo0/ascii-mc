@@ -546,7 +546,6 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
     const float triangle_w3 = triangle->v3.w;
 
     const char shade = triangle->shade;
-    const Color color = triangle->color;
     const Texture *const texture = triangle->texture;
 
     const float delta_w1_x = x3 - x2;
@@ -556,9 +555,9 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
     const float delta_w2_y = y3 - y1;
     const float delta_w3_y = y1 - y2;
 
-    const float bias1 = edge_is_top_left(v2, v3) * -0.000001f;
-    const float bias2 = edge_is_top_left(v3, v1) * -0.000001f;
-    const float bias3 = edge_is_top_left(v1, v2) * -0.000001f;
+    const float bias1 = edge_is_top_left(v2, v3) * -1e-6f;
+    const float bias2 = edge_is_top_left(v3, v1) * -1e-6f;
+    const float bias3 = edge_is_top_left(v1, v2) * -1e-6f;
 
     const v2f p0 = {xmin, ymin};
     float w1_row = v2f_get_determinant(v2, v3, p0) + bias1;
@@ -576,27 +575,31 @@ static void window_render_triangle_fill(const Triangle3D *const triangle) {
                 const float beta = w2 * inv_area;
                 const float gamma = w3 * inv_area;
 
-                Color pixel_color;
-                if (texture != NULL) {
-                    const float u =
-                        (triangle->uv1.x * alpha * z1 / triangle_w1) +
-                        (triangle->uv2.x * beta * z2 / triangle_w2) +
-                        (triangle->uv3.x * gamma * z3 / triangle_w3);
-                    const float v =
-                        (triangle->uv1.y * alpha * z1 / triangle_w1) +
-                        (triangle->uv2.y * beta * z2 / triangle_w2) +
-                        (triangle->uv3.y * gamma * z3 / triangle_w3);
-                    const float inv_w = (alpha / triangle_w1) +
-                                        (beta / triangle_w2) +
-                                        (gamma / triangle_w3);
-                    pixel_color = texture_get(texture, u / inv_w, v / inv_w);
-                } else {
-                    pixel_color = color;
+                const float z = ((z1 * alpha) + (z2 * beta) + (z3 * gamma)) /
+                                (alpha + beta + gamma);
+                const int pixel_index = row_offset + x;
+
+                if (z < window.pixels[pixel_index].z) {
+                    Color pixel_color;
+                    if (texture != NULL) {
+                        const float u =
+                            (triangle->uv1.x * alpha * z1 / triangle_w1) +
+                            (triangle->uv2.x * beta * z2 / triangle_w2) +
+                            (triangle->uv3.x * gamma * z3 / triangle_w3);
+                        const float v =
+                            (triangle->uv1.y * alpha * z1 / triangle_w1) +
+                            (triangle->uv2.y * beta * z2 / triangle_w2) +
+                            (triangle->uv3.y * gamma * z3 / triangle_w3);
+                        const float inv_w = (alpha / triangle_w1) +
+                                            (beta / triangle_w2) +
+                                            (gamma / triangle_w3);
+                        pixel_color =
+                            texture_get(texture, u / inv_w, v / inv_w);
+                    } else {
+                        pixel_color = triangle->color;
+                    }
+                    window_set_pixel(pixel_index, shade, pixel_color, z);
                 }
-                window_set_pixel_with_z_check(
-                    row_offset + x, shade, pixel_color,
-                    ((z1 * alpha) + (z2 * beta) + (z3 * gamma)) /
-                        (alpha + beta + gamma));
             }
             w1 += delta_w1_y;
             w2 += delta_w2_y;

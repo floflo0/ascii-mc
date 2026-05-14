@@ -8,10 +8,10 @@
 #include "viewport_defs.h"
 
 typedef struct {
-    Camera camera;
     Gamepad *gamepad;
     Mesh mesh;
     uint64_t last_grounded_time_microseconds;
+    Camera camera;
     v3f position;
     v3f velocity;
     v3f input_velocity;

@@ -31,11 +31,19 @@
 #include "args_config.h"
 
 typedef struct {
-#define FLAG(variable_name, name, short_name, description) bool variable_name;
-#define LONG_FLAG(variable_name, name, description) bool variable_name;
+#define FLAG(variable_name, name, short_name, description)
+#define LONG_FLAG(variable_name, name, description)
 #define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, \
                         description)                               \
     const char *variable_name;
+    ARGS_FLAGS
+#undef FLAG
+#undef LONG_FLAG
+#undef FLAG_WITH_PARAM
+
+#define FLAG(variable_name, name, short_name, description) bool variable_name;
+#define LONG_FLAG(variable_name, name, description) bool variable_name;
+#define FLAG_WITH_PARAM(variable_name, name, short_name, arg_name, description)
     ARGS_FLAGS
 #undef FLAG
 #undef LONG_FLAG

@@ -32,10 +32,10 @@ typedef struct {
     GamepadArray gamepads;
     Player players[4];
     uint64_t frame_start_time_microseconds;
+    World *world;
     float update_time;
     float render_time;
     float total_time;
-    World *world;
     uint8_t number_players;
     bool running;
     bool show_debug_info;

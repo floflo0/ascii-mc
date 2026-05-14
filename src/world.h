@@ -16,10 +16,10 @@ typedef struct {
     Aabb aabb;
     Mesh mesh;
     bool mesh_dirty;
+    bool loaded_by[4];
 #ifndef __wasm__
     pthread_mutex_t mesh_mutex;
 #endif
-    bool loaded_by[4];
     Block blocks[CHUNK_SIZE][CHUNK_HEIGHT][CHUNK_SIZE];  // blocks[x][y][z]
 } Chunk;
 

@@ -43,9 +43,12 @@ size_t strlen(const char *s) {
     return size;
 }
 
-char *strcpy(char *restrict dst, const char *restrict src) {
-    while (*src) *dst++ = *src++;
-    return dst;
+char *strcpy(char *restrict destination, const char *restrict source) {
+    assert(destination != NULL);
+    assert(source != NULL);
+    char *const return_pointer = destination;
+    while ((*destination++ = *source++));
+    return return_pointer;
 }
 
 int strcmp(const char *s1, const char *s2) {

@@ -127,7 +127,7 @@ char *strerror(int errnum) {
     }
 
     _Pragma("GCC diagnostic push")
-    _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
-    return (char*)errno_message[errnum];
+        _Pragma("GCC diagnostic ignored \"-Wcast-qual\"") return (
+            char *)errno_message[errnum];
     _Pragma("GCC diagnostic pop")
 }

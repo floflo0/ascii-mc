@@ -273,4 +273,3 @@ void free(void *const ptr) {
     MemoryChunk *const memory_chunk = get_memory_chunk_from_ptr(ptr);
     memory_chunk_free(memory_chunk);
 }
-

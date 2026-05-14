@@ -29,15 +29,18 @@ CFLAGS +=                                \
 	-Wextra                              \
 	-Wcast-qual                          \
 	-Wmissing-prototypes                 \
+	-Wimplicit-fallthrough               \
+	-Wwrite-strings                      \
+	-Wunreachable-code                   \
 	-DVERSION=\"$(VERSION)\"             \
 	$(shell pkg-config --cflags $(LIBS)) \
 	$(EXTRA_CFLAGS)
 ifeq ($(BUILD_TYPE), release)
-	CFLAGS += -DPROD -DNDEBUG -O3 -ffast-math -flto=auto -march=native
+	CFLAGS += -DPROD -DNDEBUG -O3 -ffast-math -flto=auto -fno-stack-protector -march=native
 else ifeq ($(BUILD_TYPE), debug)
-	CFLAGS += -ggdb
+	CFLAGS += -ggdb -fstack-protector-all
 	ifeq ($(PLATFORM), linux-x86_64)
-		CFLAGS += -fsanitize=unreachable -fsanitize=address -fsanitize=leak
+		CFLAGS += -fsanitize=undefined -fsanitize=address -fsanitize=leak
 	endif
 endif
 

@@ -366,7 +366,7 @@ static void file_flush(FILE *self) {
     assert(false && "unsupported stream");
 }
 
-int fputc(int c, FILE *stream) {
+int fputc(const int c, FILE *const stream) {
     assert(stream != NULL);
     assert(stream->buffer_length < FILE_BUFFER_SIZE - 1);
     if (c == '\n') {
@@ -380,4 +380,18 @@ int fputc(int c, FILE *stream) {
         file_flush(stream);
     }
     return c;
+}
+
+int puts(const char *const string) {
+    assert(string != NULL);
+    size_t i = 0;
+    for (; string[i]; ++i) {
+        if (fputc(string[i], stdout) == EOF) {
+            return EOF;
+        }
+    }
+    if (fputc('\n', stdout) == EOF) {
+        return EOF;
+    }
+    return i + 1;
 }

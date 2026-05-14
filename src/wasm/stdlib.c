@@ -10,6 +10,10 @@ void exit(const int status) {
     _exit(status);
 }
 
+void abort(void) {
+    _exit(134);
+}
+
 char *getenv([[gnu::unused]] const char *name) {
     return NULL;
 }

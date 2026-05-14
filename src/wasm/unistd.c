@@ -45,5 +45,6 @@ ssize_t write(int fd, const void *buf, size_t count) {
 
 char *ttyname([[maybe_unused]] int fd) {
     assert(fd == STDOUT_FILENO && "fd not supported");
-    return "/dev/pts/1";
+    static char name[] = "/dev/pts/1";
+    return name;
 }

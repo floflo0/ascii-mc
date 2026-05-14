@@ -9,7 +9,7 @@ def main() -> None:
     print()
     print('#include <errno.h>')
     print()
-    print('char *const errno_message[] = {')
+    print('static const char *const errno_message[] = {')
 
     for code, name in errno.errorcode.items():
         print(f'    [{name}] = "{os.strerror(code)}",')

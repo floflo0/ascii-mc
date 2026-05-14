@@ -26,7 +26,8 @@ void run_callback_int_int(void (*callback)(const int, const int),
 }
 
 void wasm_main(void) {
-    char *argv[] = {"ascii-mc", NULL};
+    char program_name[] = "ascii-mc";
+    char *argv[] = {program_name, NULL};
     malloc_init();
     main((sizeof(argv) / sizeof(*argv)) - 1, argv);
 

@@ -122,5 +122,9 @@ char *strerror(int errnum) {
                  "Unknown error %d", errnum);
         return unknown_error_message;
     }
-    return errno_message[errnum];
+
+    _Pragma("GCC diagnostic push")
+    _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
+    return (char*)errno_message[errnum];
+    _Pragma("GCC diagnostic pop")
 }

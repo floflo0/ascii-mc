@@ -334,6 +334,8 @@ void mesh_render(const Mesh *const restrict self,
 
     static const char shade_char[] = {'.', ';', '!'};
 
+    if (self->triangles.length == 0) return;
+
     Triangle3DArena *const arena =
         triangle3D_arena_create(2 * self->triangles.length);
 

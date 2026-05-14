@@ -493,7 +493,7 @@ static inline void chunk_generate_mesh(Chunk *const restrict self,
                 }
 
                 // bottom face
-                if (y > 0 && !self->blocks[x][y - 1][z].type) {
+                if (y == 0 || (y > 0 && !self->blocks[x][y - 1][z].type)) {
                     const Texture *const bottom_texture =
                         block_bottom_textures[self->blocks[x][y][z].type];
                     const Color bottom_color =
@@ -553,8 +553,8 @@ static inline void chunk_generate_mesh(Chunk *const restrict self,
 [[gnu::nonnull]]
 static void chunck_update_aabb(Chunk *const self) {
     assert(self != NULL);
-    self->aabb.position.y = -1.0f;
-    self->aabb.size.y = -1.0f;
+    self->aabb.position.y = 0.0f;
+    self->aabb.size.y = 0.0f;
     for (int y = 0; y < CHUNK_HEIGHT; ++y) {
         for (int x = 0; x < CHUNK_SIZE; ++x) {
             for (int z = 0; z < CHUNK_SIZE; ++z) {
@@ -582,7 +582,10 @@ end_loop:
 static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
                            const int8_t player_index) {
     assert(0 <= player_index && player_index < 4);
-    log_debugf("load chunk (%d, %d)", x, z);
+    log_debugf("loading chunk (%d, %d)...", x, z);
+#ifdef LOG_LEVEL_DEBUG
+    const uint64_t loading_start_time = get_time_microseconds();
+#endif
     Chunk *const self = malloc_or_exit(sizeof(*self), "failed to create chunk");
 
     self->x = x;
@@ -691,6 +694,9 @@ static Chunk *chunk_create(const int x, const int z, const uint32_t seed,
 
     mesh_init(&self->mesh, 1024, 1024);
     self->mesh_dirty = true;
+
+    log_debugf("loaded chunk (%d, %d) in %.3f ms", x, z,
+               (get_time_microseconds() - loading_start_time) * 1e-3f);
 
     return self;
 }

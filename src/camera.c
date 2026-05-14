@@ -202,6 +202,9 @@ static bool is_aabb_forward_plane(const Aabb *const restrict aabb,
                                   const Plane *const restrict plane) {
     assert(aabb != NULL);
     assert(plane != NULL);
+    assert(aabb->size.x >= 0.0f);
+    assert(aabb->size.y >= 0.0f);
+    assert(aabb->size.z >= 0.0f);
     const v3f extents = v3f_mul(aabb->size, 0.5f);
     const float r = v3f_dot(extents, v3f_abs(plane->normal));
     const v3f center = v3f_add(aabb->position, extents);

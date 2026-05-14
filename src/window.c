@@ -279,7 +279,7 @@ static inline void window_detect_resize(void) {
 }
 
 static inline void handle_keyboard_input(void) {
-    while (true) {
+    for (;;) {
         char chr;
         const int64_t result = read(STDIN_FILENO, &chr, 1);
         if (result < 0) {

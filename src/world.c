@@ -971,7 +971,7 @@ static void *world_render_thread(void *const data) {
     const Camera *const camera = render_context->camera;
     const Viewport *const viewport = render_context->viewport;
 
-    while (true) {
+    for (;;) {
         mutex_lock(&render_context->mutex);
         const int x = render_context->x;
         if (x >= render_context->max_x) {

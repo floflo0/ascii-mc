@@ -2,7 +2,7 @@
 
 #include "camera_defs.h"
 #include "mesh_defs.h"
-#include "viewport.h"
+#include "viewport_defs.h"
 
 [[gnu::nonnull(1)]]
 void mesh_init(Mesh *const self, const size_t preallocate_vertices_size,

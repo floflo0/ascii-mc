@@ -9,7 +9,7 @@
 #include "collision_defs.h"
 #include "config.h"
 #include "mesh_defs.h"
-#include "viewport.h"
+#include "viewport_defs.h"
 
 typedef struct {
     int x, z;

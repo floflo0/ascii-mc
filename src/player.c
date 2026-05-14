@@ -17,6 +17,7 @@
 #include "triangle_index_array.h"
 #include "v3f_array.h"
 #include "vec.h"
+#include "viewport.h"
 #include "window.h"
 
 #define WORLD_ORIGIN (WORLD_SIZE / 2)
@@ -908,11 +909,10 @@ void player_teleport(Player *const restrict self, v3i position,
         self->position.y = 0.0f;
     exit_loop:
     } else if (self->game_mode != PLAYER_GAME_MODE_SPECTATOR) {
-        while (true) {
+        for (;;) {
             if (world_block_is_solid(world, position)) {
                 ++position.y;
                 continue;
-                ;
             }
 
             if (world_block_is_solid(

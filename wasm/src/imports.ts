@@ -1,4 +1,16 @@
-import type { Int, Ptr, SizeT, CharPtr, Uint64, Char, Float, Double, Uint32, Uint8, Uint16 } from './types';
+import type {
+    Char,
+    CharPtr,
+    Double,
+    Float,
+    Int,
+    Ptr,
+    SizeT,
+    Uint8,
+    Uint16,
+    Uint32,
+    Uint64,
+} from './types';
 
 export type Imports = {
     memory: WebAssembly.Memory;
@@ -20,10 +32,10 @@ export type Imports = {
     JS_write(bufferPtr: Ptr, count: SizeT): void;
     JS_read_char(): Char;
     JS_get_memory_size(): SizeT;
-    JS_get_terminal_width(): Int
-    JS_get_terminal_height(): Int
-    JS_get_terminal_pixel_width(): Int
-    JS_get_terminal_pixel_height(): Int
+    JS_get_terminal_width(): Int;
+    JS_get_terminal_height(): Int;
+    JS_get_terminal_pixel_width(): Int;
+    JS_get_terminal_pixel_height(): Int;
     _exit(status: Int): never;
     JS_ongamepadconnected(callback: Ptr): void;
     JS_ongamepaddisconnected(callback: Ptr): void;
@@ -41,9 +53,9 @@ export type Imports = {
         gamepadIdSize: SizeT,
     ): void;
     JS_Gamepad_get_axis(gamepadIndex: Uint32, axisIndex: Uint8): Float;
-    JS_get_gamepad_button(gamepadIndex: Uint32, button: Uint8): boolean,
+    JS_get_gamepad_button(gamepadIndex: Uint32, button: Uint8): boolean;
     JS_on_pointer_move(callback: Ptr): void;
     JS_on_pointer_down(callback: Ptr): void;
     JS_on_keydown(callback: Ptr): void;
     JS_on_keyup(callback: Ptr): void;
-}
+};

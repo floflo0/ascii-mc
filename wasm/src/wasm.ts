@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { Exit } from './exit';
 import type {
     Exports,
@@ -9,11 +11,49 @@ import type {
 } from './exports';
 import type { Imports } from './imports';
 import { Terminal } from './terminal';
-import type { Ptr, CharPtr } from './types';
+import type { CharPtr, Ptr } from './types';
 
-const MEMORY_SIZE: number = 15625;  // 1024 MB
+const MEMORY_SIZE = 15625; // 1024 MB
 
 const NULL: Ptr = 0;
+
+const hapticActuatorsRumble = async (
+    hapticActuators: GamepadHapticActuator,
+    lowFrequency: number,
+    highFrequency: number,
+    durationMiliseconds: number,
+): Promise<void> => {
+    console.assert(hapticActuators !== undefined);
+    console.assert(0.0 <= lowFrequency && lowFrequency <= 1.0);
+    console.assert(0.0 <= highFrequency && highFrequency <= 1.0);
+    console.assert(0.0 < durationMiliseconds);
+    if (hapticActuators.playEffect !== undefined) {
+        let effect: GamepadHapticEffectType;
+        if (hapticActuators.effects?.length) {
+            [effect] = hapticActuators.effects;
+        } else if (hapticActuators.type !== undefined) {
+            effect = hapticActuators.type;
+        } else {
+            return;
+        }
+
+        // TODO: handle return value
+        await hapticActuators.playEffect(effect, {
+            duration: durationMiliseconds,
+            strongMagnitude: lowFrequency,
+            weakMagnitude: highFrequency,
+        });
+        return;
+    }
+
+    if (hapticActuators.pulse === undefined) return;
+
+    // TODO: handle return value
+    await hapticActuators.pulse(
+        (lowFrequency + highFrequency) * 0.5,
+        durationMiliseconds,
+    );
+};
 
 export class Wasm {
     private readonly memory: WebAssembly.Memory;
@@ -22,20 +62,29 @@ export class Wasm {
     private readonly textDecoder: TextDecoder = new TextDecoder();
     private readonly textEncoder: TextEncoder = new TextEncoder();
 
+    // eslint-disable-next-line class-methods-use-this
     private mainWasm: WasmMain = () => {
-        console.assert(false, "mainWasm was not loaded");
+        console.assert(false, 'mainWasm was not loaded');
     };
+
+    // eslint-disable-next-line class-methods-use-this
     private runCallback: RunCallback = (_callback) => {
-        console.assert(false, "runCallback was not loaded");
+        console.assert(false, 'runCallback was not loaded');
     };
+
+    // eslint-disable-next-line class-methods-use-this
     private runCallbackUint32: RunCallbackUint32 = (_callback) => {
-        console.assert(false, "runCallbackUint32 was not loaded");
+        console.assert(false, 'runCallbackUint32 was not loaded');
     };
+
+    // eslint-disable-next-line class-methods-use-this
     private runCallbackInt: RunCallbackInt = (_callback) => {
-        console.assert(false, "runCallbackInt was not loaded");
+        console.assert(false, 'runCallbackInt was not loaded');
     };
+
+    // eslint-disable-next-line class-methods-use-this
     private runCallbackIntInt: RunCallbackIntInt = (_callback) => {
-        console.assert(false, "runCallbackIntInt was not loaded");
+        console.assert(false, 'runCallbackIntInt was not loaded');
     };
 
     private constructor(memory: WebAssembly.Memory) {
@@ -62,10 +111,10 @@ export class Wasm {
             this.mainWasm();
         } catch (error) {
             if (error instanceof Exit) {
-                if (error.status != 0) {
+                if (error.status !== 0) {
                     this.terminal.printMessage(
-                        `Process exit with ${error.status} code.\n\n` +
-                        'Refresh the page to restart the game.',
+                        `Process exit with ${error.status} code.\n\n`
+                        + 'Refresh the page to restart the game.',
                     );
                 }
                 return;
@@ -96,14 +145,18 @@ export class Wasm {
         return {
             memory: this.memory,
             JS_console_log: (ptr) => {
+                // eslint-disable-next-line no-console
                 console.log(this.str(ptr));
             },
             JS_console_error: (ptr) => {
+                // eslint-disable-next-line no-console
                 console.error(this.str(ptr));
             },
             JS_requestAnimationFrame: (callback) => {
-                console.assert(callback != NULL);
-                requestAnimationFrame(() => this.runCallback(callback));
+                console.assert(callback !== NULL);
+                requestAnimationFrame(() => {
+                    this.runCallback(callback);
+                });
             },
             JS_Date_now: () => BigInt(Date.now()),
             JS_performance_now: () => performance.now(),
@@ -142,7 +195,7 @@ export class Wasm {
 
                 window.ongamepadconnected = (event) => {
                     this.runCallbackUint32(callback, event.gamepad.index);
-                }
+                };
             },
             JS_ongamepaddisconnected: (callback) => {
                 if (callback === NULL) {
@@ -152,9 +205,9 @@ export class Wasm {
 
                 window.ongamepaddisconnected = (event) => {
                     this.runCallbackUint32(callback, event.gamepad.index);
-                }
+                };
             },
-            JS_gameapad_rumble: (
+            JS_gameapad_rumble: async (
                 gamepadIndex,
                 lowFrequency,
                 highFrequency,
@@ -168,7 +221,7 @@ export class Wasm {
                 if (gamepad!.hapticActuators !== undefined) {
                     if (!gamepad!.hapticActuators.length) return;
 
-                    this.hapticActuatorsRumble(
+                    await hapticActuatorsRumble(
                         gamepad!.hapticActuators[0],
                         lowFrequency / 0xffff,
                         highFrequency / 0xffff,
@@ -179,7 +232,7 @@ export class Wasm {
 
                 if (gamepad!.vibrationActuator === undefined) return;
 
-                this.hapticActuatorsRumble(
+                await hapticActuatorsRumble(
                     gamepad!.vibrationActuator,
                     lowFrequency / 0xffff,
                     highFrequency / 0xffff,
@@ -201,7 +254,7 @@ export class Wasm {
                 console.assert(gamepadIdSize > 0);
                 const gamepad = navigator.getGamepads()[gamepadIndex];
                 console.assert(gamepad !== null);
-                const encodedId = this.textEncoder.encode(gamepad!.id + "\0");
+                const encodedId = this.textEncoder.encode(`${gamepad!.id}\0`);
                 if (gamepadIdSize < encodedId.length) {
                     throw new Error(
                         `buffer too small to contain gamepad id '${gamepadId}'`,
@@ -263,41 +316,4 @@ export class Wasm {
         while (this.memoryView[end]) ++end;
         return this.textDecoder.decode(this.memoryView.subarray(ptr, end));
     };
-
-    private hapticActuatorsRumble(
-        hapticActuators: GamepadHapticActuator,
-        lowFrequency: number,
-        highFrequency: number,
-        durationMiliseconds: number,
-    ): void {
-        console.assert(hapticActuators !== undefined);
-        console.assert(0.0 <= lowFrequency && lowFrequency <= 1.0);
-        console.assert(0.0 <= highFrequency && highFrequency <= 1.0);
-        console.assert(0.0 < durationMiliseconds);
-        if (hapticActuators.playEffect !== undefined) {
-            let effect: GamepadHapticEffectType;
-            if (hapticActuators.effects !== undefined &&
-                hapticActuators.effects.length) {
-                effect = hapticActuators.effects[0];
-            } else if (hapticActuators.type !== undefined) {
-                effect = hapticActuators.type;
-            } else {
-                return;
-            }
-
-            hapticActuators.playEffect(effect, {
-                duration: durationMiliseconds,
-                strongMagnitude: lowFrequency,
-                weakMagnitude: highFrequency,
-            });
-            return;
-        }
-
-        if (hapticActuators.pulse === undefined) return;
-
-        hapticActuators.pulse(
-            (lowFrequency + highFrequency) * 0.5,
-            durationMiliseconds,
-        );
-    }
 }

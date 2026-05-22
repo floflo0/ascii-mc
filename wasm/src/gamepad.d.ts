@@ -9,7 +9,10 @@ declare global {
     interface GamepadHapticActuator {
         readonly type?: GamepadHapticEffectType;
         readonly effects?: GamepadHapticEffectType[];
-        playEffect?(type: GamepadHapticEffectType, params?: GamepadEffectParameters): Promise<GamepadHapticsResult>;
+        playEffect?(
+            type: GamepadHapticEffectType,
+            params?: GamepadEffectParameters,
+        ): Promise<GamepadHapticsResult>;
         pulse?(value: number, duration: number): Promise<boolean>;
     }
 };

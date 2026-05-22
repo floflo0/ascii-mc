@@ -1,22 +1,22 @@
-export const COLOR_RESET: string = '0';
+export const COLOR_RESET = '0';
 
-export const COLOR_BLACK: string = '30';
-export const COLOR_RED: string = '31';
-export const COLOR_GREEN: string = '32';
-export const COLOR_YELLOW: string = '33';
-export const COLOR_BLUE: string = '34';
-export const COLOR_MAGENTA: string = '35';
-export const COLOR_CYAN: string = '36';
-export const COLOR_WHITE: string = '37';
+export const COLOR_BLACK = '30';
+export const COLOR_RED = '31';
+export const COLOR_GREEN = '32';
+export const COLOR_YELLOW = '33';
+export const COLOR_BLUE = '34';
+export const COLOR_MAGENTA = '35';
+export const COLOR_CYAN = '36';
+export const COLOR_WHITE = '37';
 
-export const COLOR_BRIGHT_BLACK: string = '90';
-export const COLOR_BRIGHT_RED: string = '91';
-export const COLOR_BRIGHT_GREEN: string = '92';
-export const COLOR_BRIGHT_YELLOW: string = '93';
-export const COLOR_BRIGHT_BLUE: string = '94';
-export const COLOR_BRIGHT_MAGENTA: string = '95';
-export const COLOR_BRIGHT_CYAN: string = '96';
-export const COLOR_BRIGHT_WHITE: string = '97';
+export const COLOR_BRIGHT_BLACK = '90';
+export const COLOR_BRIGHT_RED = '91';
+export const COLOR_BRIGHT_GREEN = '92';
+export const COLOR_BRIGHT_YELLOW = '93';
+export const COLOR_BRIGHT_BLUE = '94';
+export const COLOR_BRIGHT_MAGENTA = '95';
+export const COLOR_BRIGHT_CYAN = '96';
+export const COLOR_BRIGHT_WHITE = '97';
 
 export const colors: Record<string, string> = {
     [COLOR_RESET]: '#ffffff',

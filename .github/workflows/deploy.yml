@@ -2,7 +2,8 @@ name: Deploy Github pages
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
   workflow_dispatch:
 
@@ -20,17 +21,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: 'latest'
           cache: 'npm'
           cache-dependency-path: './wasm/package-lock.json'
 
-      - uses: actions/setup-python@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           check-latest: true
 
       - name: Install dependencies
@@ -45,7 +48,11 @@ jobs:
       - name: Build wasm
         run: make wasm BUILD_TYPE=release
 
-      - name: Build website
+      - name: Run linter
+        working-directory: wasm
+        run: npm run lint-check
+
+      - name: Build vite
         working-directory: wasm
         run: npm run build
 

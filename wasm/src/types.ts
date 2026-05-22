@@ -41,7 +41,7 @@ export type Uint32 = number;
 /**
  * uint64_t
  */
-export type Uint64 = BigInt;
+export type Uint64 = bigint;
 
 /**
  * float

@@ -1,6 +1,7 @@
-import { Wasm } from './wasm';
+import './style.css';
+
 import mainWasm from './main.wasm?url';
-import './style.css'
+import { Wasm } from './wasm';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const wasm = await Wasm.fromUrl(mainWasm);
